@@ -146,7 +146,15 @@ function OrdersList() {
 }
 
 function NewOrderButton() {
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (search.new) {
+      setOpen(true);
+      navigate({ search: {} as never, replace: true });
+    }
+  }, [search.new, navigate]);
   const { data: customers = [] } = useCustomers();
   const { data: products = [] } = useProducts();
   const create = useCreateOrder();

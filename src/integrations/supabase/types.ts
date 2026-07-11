@@ -177,6 +177,7 @@ export type Database = {
           product_id: string | null
           product_name: string
           qty: number
+          unit_cost: number
           unit_price: number
         }
         Insert: {
@@ -187,6 +188,7 @@ export type Database = {
           product_id?: string | null
           product_name: string
           qty?: number
+          unit_cost?: number
           unit_price?: number
         }
         Update: {
@@ -197,6 +199,7 @@ export type Database = {
           product_id?: string | null
           product_name?: string
           qty?: number
+          unit_cost?: number
           unit_price?: number
         }
         Relationships: [
@@ -276,6 +279,7 @@ export type Database = {
         Row: {
           active: boolean
           category: string | null
+          cost_price: number
           created_at: string
           currency: string
           description: string | null
@@ -288,6 +292,7 @@ export type Database = {
         Insert: {
           active?: boolean
           category?: string | null
+          cost_price?: number
           created_at?: string
           currency?: string
           description?: string | null
@@ -300,6 +305,7 @@ export type Database = {
         Update: {
           active?: boolean
           category?: string | null
+          cost_price?: number
           created_at?: string
           currency?: string
           description?: string | null

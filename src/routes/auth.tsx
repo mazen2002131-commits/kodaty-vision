@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Loader2 } from "lucide-react";
+import kodatyLogo from "@/assets/kodaty-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,

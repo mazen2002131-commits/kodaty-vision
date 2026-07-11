@@ -189,10 +189,28 @@ export function useUpdateOrderStatus() {
     mutationFn: async ({ id, status }: { id: string; status: OrderStatus }) => {
       const { error } = await supabase.from("orders").update({ status }).eq("id", id);
       if (error) throw error;
+      if (status === "delivered") {
+        const { data: o } = await supabase
+          .from("orders")
+          .select("id, customer_id, order_items(product_id, product_name)")
+          .eq("id", id)
+          .maybeSingle();
+        const item = (o as any)?.order_items?.[0];
+        const { runAutomationsFor } = await import("./automation");
+        await runAutomationsFor("order_paid", {
+          order_id: id,
+          customer_id: (o as any)?.customer_id,
+          product_id: item?.product_id,
+          product_name: item?.product_name,
+        });
+      }
     },
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["orders"] });
       qc.invalidateQueries({ queryKey: ["order", v.id] });
+      qc.invalidateQueries({ queryKey: ["licenses"] });
+      qc.invalidateQueries({ queryKey: ["automations"] });
+      qc.invalidateQueries({ queryKey: ["automation_runs", "all"] });
     },
   });
 }

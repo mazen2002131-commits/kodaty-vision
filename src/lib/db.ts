@@ -159,7 +159,51 @@ export function useUpdateOrderStatus() {
       const { error } = await supabase.from("orders").update({ status }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["order", v.id] });
+    },
+  });
+}
+
+export function useCustomer(id: string) {
+  return useQuery({
+    queryKey: ["customer", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("customers").select("*").eq("id", id).maybeSingle();
+      if (error) throw error;
+      return data as Customer | null;
+    },
+  });
+}
+
+export function useCustomerOrders(customerId: string) {
+  return useQuery({
+    queryKey: ["customer-orders", customerId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, order_items(id,product_name,qty,unit_price)")
+        .eq("customer_id", customerId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Order[];
+    },
+  });
+}
+
+export function useOrder(id: string) {
+  return useQuery({
+    queryKey: ["order", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, customers(id,name,email,phone,company,tier), order_items(id,product_id,product_name,qty,unit_price)")
+        .eq("id", id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as (Order & { customers: (Customer & { phone: string | null }) | null }) | null;
+    },
   });
 }
 

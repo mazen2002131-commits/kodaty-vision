@@ -23,6 +23,24 @@ export function Topbar({ onOpenPalette }: TopbarProps) {
   const pathname = useRouterState({ select: s => s.location.pathname });
   const base = "/" + (pathname.split("/")[1] || "");
   const crumb = CRUMBS[base] || "Kodaty";
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<{ name: string; email: string; initial: string }>({ name: "…", email: "", initial: "؟" });
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      const u = data.user;
+      if (!u) return;
+      const { data: prof } = await supabase.from("profiles").select("full_name").eq("id", u.id).maybeSingle();
+      const name = prof?.full_name || u.email?.split("@")[0] || "المستخدم";
+      setProfile({ name, email: u.email ?? "", initial: name.slice(0, 1).toUpperCase() });
+    });
+  }, []);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  };
+
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-xl">

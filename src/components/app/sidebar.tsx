@@ -7,12 +7,15 @@ import {
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useRole } from "@/lib/roles";
 
-const NAV = [
+type NavItem = { to: string; label: string; icon: any; badge?: number; adminOnly?: boolean };
+
+const NAV: { section: string; items: NavItem[] }[] = [
   { section: "المساحة", items: [
     { to: "/", label: "الرئيسية", icon: LayoutDashboard },
-    { to: "/orders", label: "الطلبات", icon: ShoppingCart, badge: 8 },
-    { to: "/subscriptions", label: "الاشتراكات", icon: RefreshCw, badge: 3 },
+    { to: "/orders", label: "الطلبات", icon: ShoppingCart },
+    { to: "/subscriptions", label: "الاشتراكات", icon: RefreshCw },
     { to: "/customers", label: "العملاء", icon: Users },
   ]},
   { section: "الكتالوج", items: [
@@ -21,19 +24,19 @@ const NAV = [
     { to: "/inventory", label: "المخزون", icon: Boxes },
   ]},
   { section: "الأعمال", items: [
-    { to: "/finance", label: "المالية", icon: Wallet },
-    { to: "/reports", label: "التقارير", icon: FileBarChart },
-    { to: "/analytics", label: "الإحصائيات", icon: LineChart },
-    { to: "/marketing", label: "التسويق", icon: Megaphone },
+    { to: "/finance", label: "المالية والمحاسبة", icon: Wallet, adminOnly: true },
+    { to: "/reports", label: "التقارير", icon: FileBarChart, adminOnly: true },
+    { to: "/analytics", label: "الإحصائيات", icon: LineChart, adminOnly: true },
+    { to: "/marketing", label: "التسويق", icon: Megaphone, adminOnly: true },
   ]},
   { section: "العمليات", items: [
     { to: "/support", label: "الدعم الفني", icon: LifeBuoy },
     { to: "/tasks", label: "المهام", icon: CheckSquare },
-    { to: "/automation", label: "الأتمتة", icon: Zap },
+    { to: "/automation", label: "الأتمتة", icon: Zap, adminOnly: true },
     { to: "/notifications", label: "الإشعارات", icon: Bell },
-    { to: "/settings", label: "الإعدادات", icon: Settings },
+    { to: "/settings", label: "الإعدادات", icon: Settings, adminOnly: true },
   ]},
-] as const;
+];
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: s => s.location.pathname });

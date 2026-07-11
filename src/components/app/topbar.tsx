@@ -27,6 +27,7 @@ export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
   const crumb = CRUMBS[base] || "Kodaty";
   const navigate = useNavigate();
   const { resolved, toggle } = useTheme();
+  const { role, isAdmin } = useRole();
   const [profile, setProfile] = useState<{ name: string; email: string; initial: string }>({ name: "…", email: "", initial: "؟" });
 
   useEffect(() => {

@@ -122,7 +122,14 @@ function Products() {
                       <Package className="h-5 w-5" />
                     </div>
                     <div>
-                      <div className="font-medium leading-tight">{p.name}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium leading-tight">{p.name}</span>
+                        {p.billing_type && p.billing_type !== "one_time" && (
+                          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                            {p.billing_type === "monthly" ? "شهري" : "سنوي"}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground">{p.category ?? "—"}</div>
                       {Number(p.cost_price ?? 0) > 0 && (
                         <div className="mt-1 text-[11px] text-muted-foreground">
@@ -133,6 +140,7 @@ function Products() {
                   </div>
                   <div className="num text-lg font-semibold text-primary">{formatEGP(Number(p.price))}</div>
                 </div>
+
               );
             })}
           </div>

@@ -13,6 +13,8 @@ export type Customer = {
   created_at: string;
 };
 
+export type BillingType = "one_time" | "monthly" | "yearly";
+
 export type Product = {
   id: string;
   name: string;
@@ -21,7 +23,9 @@ export type Product = {
   cost_price: number;
   currency: string;
   active: boolean;
+  billing_type: BillingType;
 };
+
 
 
 export type Order = {
@@ -123,6 +127,7 @@ export function useCreateOrder() {
       qty: number;
       priority?: OrderPriority;
       status?: OrderStatus;
+      billing_type?: BillingType;
     }) => {
       const { data: u } = await supabase.auth.getUser();
       const total = input.unit_price * input.qty;
@@ -148,12 +153,33 @@ export function useCreateOrder() {
         unit_cost: input.unit_cost ?? 0,
       });
       if (itemErr) throw itemErr;
+
+      // Auto-create subscription for recurring products
+      if (input.billing_type && input.billing_type !== "one_time") {
+        const starts = new Date();
+        const ends = new Date(starts);
+        if (input.billing_type === "monthly") ends.setMonth(ends.getMonth() + 1);
+        else ends.setFullYear(ends.getFullYear() + 1);
+        const { error: subErr } = await supabase.from("subscriptions").insert({
+          customer_id: input.customer_id,
+          product_id: input.product_id,
+          product_name: input.product_name,
+          starts_at: starts.toISOString(),
+          ends_at: ends.toISOString(),
+          auto_renew: true,
+          status: "active",
+          price: input.unit_price,
+        });
+        if (subErr) throw subErr;
+      }
       return order;
     },
 
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["subscriptions"] });
     },
+
   });
 }
 
@@ -347,7 +373,7 @@ export function useCreateTicket() {
 export function useCreateProduct() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; category?: string; price: number; cost_price?: number }) => {
+    mutationFn: async (input: { name: string; category?: string; price: number; cost_price?: number; billing_type?: BillingType }) => {
       const { error } = await supabase.from("products").insert({
         name: input.name,
         category: input.category ?? null,
@@ -355,9 +381,11 @@ export function useCreateProduct() {
         cost_price: input.cost_price ?? 0,
         currency: "EGP",
         active: true,
+        billing_type: input.billing_type ?? "one_time",
       });
       if (error) throw error;
     },
+
 
     onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
   });

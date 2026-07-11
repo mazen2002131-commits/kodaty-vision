@@ -179,8 +179,14 @@ function NewOrderButton() {
         qty: form.qty,
         priority: form.priority,
         status: form.status,
+        billing_type: (product as any).billing_type ?? "one_time",
       });
-      toast.success("تم إنشاء الطلب");
+      toast.success(
+        (product as any).billing_type && (product as any).billing_type !== "one_time"
+          ? "تم إنشاء الطلب والاشتراك"
+          : "تم إنشاء الطلب"
+      );
+
       setForm({ customer_id: "", product_id: "", qty: 1, priority: "normal", status: "pending" });
       setOpen(false);
     } catch (err) {

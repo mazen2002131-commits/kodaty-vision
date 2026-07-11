@@ -19,7 +19,7 @@ function Products() {
   const { data: products = [], isLoading } = useProducts();
   const create = useCreateProduct();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", category: "", price: "", cost_price: "" });
+  const [form, setForm] = useState({ name: "", category: "", price: "", cost_price: "", billing_type: "one_time" as "one_time"|"monthly"|"yearly" });
 
   async function submit() {
     if (!form.name || !form.price) { toast.error("املأ الاسم والسعر"); return; }
@@ -29,12 +29,14 @@ function Products() {
         category: form.category || undefined,
         price: Number(form.price),
         cost_price: form.cost_price ? Number(form.cost_price) : 0,
+        billing_type: form.billing_type,
       });
       toast.success("تمت الإضافة");
       setOpen(false);
-      setForm({ name: "", category: "", price: "", cost_price: "" });
+      setForm({ name: "", category: "", price: "", cost_price: "", billing_type: "one_time" });
     } catch (e: any) { toast.error(e.message ?? "فشل"); }
   }
+
 
 
   const grouped = products.reduce<Record<string, typeof products>>((acc, p) => {
@@ -63,7 +65,28 @@ function Products() {
                 <div><Label>سعر البيع (ج.م)</Label><Input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} /></div>
                 <div><Label>سعر الشراء (ج.م)</Label><Input type="number" value={form.cost_price} onChange={e => setForm(f => ({ ...f, cost_price: e.target.value }))} placeholder="التكلفة" /></div>
               </div>
+              <div>
+                <Label>نوع الفوترة</Label>
+                <div className="mt-1 grid grid-cols-3 gap-2">
+                  {([
+                    { k: "one_time", label: "مرة واحدة" },
+                    { k: "monthly", label: "شهري" },
+                    { k: "yearly", label: "سنوي" },
+                  ] as const).map(o => (
+                    <button
+                      type="button"
+                      key={o.k}
+                      onClick={() => setForm(f => ({ ...f, billing_type: o.k }))}
+                      className={`rounded-lg border px-3 py-2 text-sm transition ${form.billing_type === o.k ? "border-primary bg-primary/10 font-medium text-primary" : "border-border bg-surface-sunken text-muted-foreground hover:text-foreground"}`}
+                    >{o.label}</button>
+                  ))}
+                </div>
+                {form.billing_type !== "one_time" && (
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">سيتم إنشاء اشتراك تلقائياً عند بيع هذا المنتج.</p>
+                )}
+              </div>
               {form.price && form.cost_price && (
+
                 <div className="rounded-lg bg-primary/5 px-3 py-2 text-xs">
                   <span className="text-muted-foreground">هامش الربح المتوقع: </span>
                   <span className="num font-semibold text-primary">
@@ -99,7 +122,14 @@ function Products() {
                       <Package className="h-5 w-5" />
                     </div>
                     <div>
-                      <div className="font-medium leading-tight">{p.name}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium leading-tight">{p.name}</span>
+                        {p.billing_type && p.billing_type !== "one_time" && (
+                          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                            {p.billing_type === "monthly" ? "شهري" : "سنوي"}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground">{p.category ?? "—"}</div>
                       {Number(p.cost_price ?? 0) > 0 && (
                         <div className="mt-1 text-[11px] text-muted-foreground">
@@ -110,6 +140,7 @@ function Products() {
                   </div>
                   <div className="num text-lg font-semibold text-primary">{formatEGP(Number(p.price))}</div>
                 </div>
+
               );
             })}
           </div>

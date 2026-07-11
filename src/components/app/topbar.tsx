@@ -108,7 +108,7 @@ export function Topbar({ onOpenPalette }: TopbarProps) {
                 <div className="text-xs font-medium leading-tight">{profile.name}</div>
                 <div className="text-[10px] leading-tight text-muted-foreground">مساحة العمل</div>
               </div>
-              <div className="grid h-7 w-7 place-items-center rounded-md bg-[var(--gradient-brand)] text-xs font-semibold text-white">
+              <div className="grid h-7 w-7 place-items-center rounded-md brand-gradient text-xs font-semibold text-white">
                 {profile.initial}
               </div>
             </DropdownMenuTrigger>

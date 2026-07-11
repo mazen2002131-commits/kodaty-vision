@@ -37,7 +37,7 @@ function OrderDetail() {
       {/* Header */}
       <div className="surface-elevated flex flex-wrap items-center justify-between gap-4 p-5">
         <div className="flex items-center gap-4">
-          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--gradient-brand)] text-2xl text-white shadow-brand">🔑</div>
+          <div className="grid h-14 w-14 place-items-center rounded-2xl brand-gradient text-2xl text-white shadow-brand">🔑</div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-semibold num">{o.code}</h1>

@@ -211,3 +211,12 @@
 @utility mesh-bg {
   background-image: var(--gradient-mesh);
 }
+
+@utility brand-gradient {
+  background-image: var(--gradient-brand);
+}
+
+@utility brand-gradient-soft {
+  background-image: var(--gradient-brand-soft);
+}
+

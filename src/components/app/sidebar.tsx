@@ -49,7 +49,7 @@ export function AppSidebar() {
       <div className="sticky top-0 flex h-full flex-col">
         {/* Brand */}
         <div className="flex items-center gap-3 px-4 pt-5 pb-4">
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--gradient-brand)] shadow-brand">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl brand-gradient shadow-brand">
             <span className="font-display text-lg font-bold text-white">K</span>
           </div>
           {!collapsed && (
@@ -111,7 +111,7 @@ export function AppSidebar() {
 
         {/* Upgrade card */}
         {!collapsed && (
-          <div className="m-3 rounded-xl border border-sidebar-border bg-[var(--gradient-brand)] p-4 text-white shadow-brand">
+          <div className="m-3 rounded-xl border border-sidebar-border brand-gradient p-4 text-white shadow-brand">
             <div className="text-xs opacity-80">مساعد Kodaty AI</div>
             <div className="mt-1 text-sm font-semibold">اسأل عن أرباحك، عملائك، أو تجديداتك.</div>
             <Link to="/assistant" className="mt-3 block w-full rounded-lg bg-white/15 px-3 py-1.5 text-center text-xs font-medium backdrop-blur transition hover:bg-white/25">

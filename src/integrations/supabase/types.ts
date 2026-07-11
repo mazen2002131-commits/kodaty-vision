@@ -278,6 +278,7 @@ export type Database = {
       products: {
         Row: {
           active: boolean
+          billing_type: Database["public"]["Enums"]["billing_type"]
           category: string | null
           cost_price: number
           created_at: string
@@ -291,6 +292,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          billing_type?: Database["public"]["Enums"]["billing_type"]
           category?: string | null
           cost_price?: number
           created_at?: string
@@ -304,6 +306,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          billing_type?: Database["public"]["Enums"]["billing_type"]
           category?: string | null
           cost_price?: number
           created_at?: string
@@ -519,6 +522,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "staff" | "viewer"
+      billing_type: "one_time" | "monthly" | "yearly"
       license_status: "available" | "reserved" | "sold" | "revoked"
       order_priority: "low" | "normal" | "high" | "urgent"
       order_status:
@@ -658,6 +662,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "staff", "viewer"],
+      billing_type: ["one_time", "monthly", "yearly"],
       license_status: ["available", "reserved", "sold", "revoked"],
       order_priority: ["low", "normal", "high", "urgent"],
       order_status: [

@@ -41,6 +41,10 @@ const NAV: { section: string; items: NavItem[] }[] = [
 export function AppSidebar() {
   const pathname = useRouterState({ select: s => s.location.pathname });
   const [collapsed, setCollapsed] = useState(false);
+  const { isAdmin } = useRole();
+  const nav = NAV
+    .map(g => ({ ...g, items: g.items.filter(i => !i.adminOnly || isAdmin) }))
+    .filter(g => g.items.length > 0);
 
   return (
     <aside

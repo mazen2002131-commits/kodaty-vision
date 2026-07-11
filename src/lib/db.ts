@@ -100,7 +100,7 @@ export function useOrders() {
     queryFn: async (): Promise<Order[]> => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, customers(id,name,email), order_items(id,product_name,qty,unit_price)")
+        .select("*, customers(id,name,email), order_items(id,product_name,qty,unit_price,unit_cost)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Order[];
@@ -188,7 +188,7 @@ export function useCustomerOrders(customerId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, order_items(id,product_name,qty,unit_price)")
+        .select("*, order_items(id,product_name,qty,unit_price,unit_cost)")
         .eq("customer_id", customerId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -203,7 +203,7 @@ export function useOrder(id: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, customers(id,name,email,phone,company,tier), order_items(id,product_id,product_name,qty,unit_price)")
+        .select("*, customers(id,name,email,phone,company,tier), order_items(id,product_id,product_name,qty,unit_price,unit_cost)")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;

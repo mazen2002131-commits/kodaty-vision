@@ -106,9 +106,9 @@ export function AppSidebar() {
                           </>
                         )}
                         <Icon className={cn("relative z-10 h-[18px] w-[18px] shrink-0", active ? "text-sidebar-primary" : "")} />
-                        {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+                        {!collapsed && <span className="relative z-10 flex-1 truncate">{item.label}</span>}
                         {!collapsed && "badge" in item && item.badge ? (
-                          <span className="rounded-md bg-sidebar-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-sidebar-primary num">
+                          <span className="relative z-10 rounded-md bg-sidebar-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-sidebar-primary num">
                             {item.badge}
                           </span>
                         ) : null}

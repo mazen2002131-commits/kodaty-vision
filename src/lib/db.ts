@@ -13,6 +13,8 @@ export type Customer = {
   created_at: string;
 };
 
+export type BillingType = "one_time" | "monthly" | "yearly";
+
 export type Product = {
   id: string;
   name: string;
@@ -21,7 +23,9 @@ export type Product = {
   cost_price: number;
   currency: string;
   active: boolean;
+  billing_type: BillingType;
 };
+
 
 
 export type Order = {

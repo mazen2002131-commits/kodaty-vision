@@ -32,6 +32,7 @@ import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
 import { Route as AppOrdersIndexRouteImport } from './routes/_app.orders.index'
 import { Route as AppCustomersIndexRouteImport } from './routes/_app.customers.index'
 import { Route as AppOrdersIdRouteImport } from './routes/_app.orders.$id'
+import { Route as AppFinanceJournalRouteImport } from './routes/_app.finance.journal'
 import { Route as AppCustomersIdRouteImport } from './routes/_app.customers.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -148,6 +149,11 @@ const AppOrdersIdRoute = AppOrdersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AppOrdersRoute,
 } as any)
+const AppFinanceJournalRoute = AppFinanceJournalRouteImport.update({
+  id: '/journal',
+  path: '/journal',
+  getParentRoute: () => AppFinanceRoute,
+} as any)
 const AppCustomersIdRoute = AppCustomersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -161,7 +167,7 @@ export interface FileRoutesByFullPath {
   '/assistant': typeof AppAssistantRoute
   '/automation': typeof AppAutomationRoute
   '/customers': typeof AppCustomersRouteWithChildren
-  '/finance': typeof AppFinanceRoute
+  '/finance': typeof AppFinanceRouteWithChildren
   '/inventory': typeof AppInventoryRoute
   '/licenses': typeof AppLicensesRoute
   '/marketing': typeof AppMarketingRoute
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof AppTasksRoute
   '/api/assistant': typeof ApiAssistantRoute
   '/customers/$id': typeof AppCustomersIdRoute
+  '/finance/journal': typeof AppFinanceJournalRoute
   '/orders/$id': typeof AppOrdersIdRoute
   '/customers/': typeof AppCustomersIndexRoute
   '/orders/': typeof AppOrdersIndexRoute
@@ -184,7 +191,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AppAnalyticsRoute
   '/assistant': typeof AppAssistantRoute
   '/automation': typeof AppAutomationRoute
-  '/finance': typeof AppFinanceRoute
+  '/finance': typeof AppFinanceRouteWithChildren
   '/inventory': typeof AppInventoryRoute
   '/licenses': typeof AppLicensesRoute
   '/marketing': typeof AppMarketingRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByTo {
   '/api/assistant': typeof ApiAssistantRoute
   '/': typeof AppIndexRoute
   '/customers/$id': typeof AppCustomersIdRoute
+  '/finance/journal': typeof AppFinanceJournalRoute
   '/orders/$id': typeof AppOrdersIdRoute
   '/customers': typeof AppCustomersIndexRoute
   '/orders': typeof AppOrdersIndexRoute
@@ -210,7 +218,7 @@ export interface FileRoutesById {
   '/_app/assistant': typeof AppAssistantRoute
   '/_app/automation': typeof AppAutomationRoute
   '/_app/customers': typeof AppCustomersRouteWithChildren
-  '/_app/finance': typeof AppFinanceRoute
+  '/_app/finance': typeof AppFinanceRouteWithChildren
   '/_app/inventory': typeof AppInventoryRoute
   '/_app/licenses': typeof AppLicensesRoute
   '/_app/marketing': typeof AppMarketingRoute
@@ -225,6 +233,7 @@ export interface FileRoutesById {
   '/api/assistant': typeof ApiAssistantRoute
   '/_app/': typeof AppIndexRoute
   '/_app/customers/$id': typeof AppCustomersIdRoute
+  '/_app/finance/journal': typeof AppFinanceJournalRoute
   '/_app/orders/$id': typeof AppOrdersIdRoute
   '/_app/customers/': typeof AppCustomersIndexRoute
   '/_app/orders/': typeof AppOrdersIndexRoute
@@ -252,6 +261,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/api/assistant'
     | '/customers/$id'
+    | '/finance/journal'
     | '/orders/$id'
     | '/customers/'
     | '/orders/'
@@ -275,6 +285,7 @@ export interface FileRouteTypes {
     | '/api/assistant'
     | '/'
     | '/customers/$id'
+    | '/finance/journal'
     | '/orders/$id'
     | '/customers'
     | '/orders'
@@ -301,6 +312,7 @@ export interface FileRouteTypes {
     | '/api/assistant'
     | '/_app/'
     | '/_app/customers/$id'
+    | '/_app/finance/journal'
     | '/_app/orders/$id'
     | '/_app/customers/'
     | '/_app/orders/'
@@ -475,6 +487,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrdersIdRouteImport
       parentRoute: typeof AppOrdersRoute
     }
+    '/_app/finance/journal': {
+      id: '/_app/finance/journal'
+      path: '/journal'
+      fullPath: '/finance/journal'
+      preLoaderRoute: typeof AppFinanceJournalRouteImport
+      parentRoute: typeof AppFinanceRoute
+    }
     '/_app/customers/$id': {
       id: '/_app/customers/$id'
       path: '/$id'
@@ -499,6 +518,18 @@ const AppCustomersRouteWithChildren = AppCustomersRoute._addFileChildren(
   AppCustomersRouteChildren,
 )
 
+interface AppFinanceRouteChildren {
+  AppFinanceJournalRoute: typeof AppFinanceJournalRoute
+}
+
+const AppFinanceRouteChildren: AppFinanceRouteChildren = {
+  AppFinanceJournalRoute: AppFinanceJournalRoute,
+}
+
+const AppFinanceRouteWithChildren = AppFinanceRoute._addFileChildren(
+  AppFinanceRouteChildren,
+)
+
 interface AppOrdersRouteChildren {
   AppOrdersIdRoute: typeof AppOrdersIdRoute
   AppOrdersIndexRoute: typeof AppOrdersIndexRoute
@@ -518,7 +549,7 @@ interface AppRouteChildren {
   AppAssistantRoute: typeof AppAssistantRoute
   AppAutomationRoute: typeof AppAutomationRoute
   AppCustomersRoute: typeof AppCustomersRouteWithChildren
-  AppFinanceRoute: typeof AppFinanceRoute
+  AppFinanceRoute: typeof AppFinanceRouteWithChildren
   AppInventoryRoute: typeof AppInventoryRoute
   AppLicensesRoute: typeof AppLicensesRoute
   AppMarketingRoute: typeof AppMarketingRoute
@@ -538,7 +569,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAssistantRoute: AppAssistantRoute,
   AppAutomationRoute: AppAutomationRoute,
   AppCustomersRoute: AppCustomersRouteWithChildren,
-  AppFinanceRoute: AppFinanceRoute,
+  AppFinanceRoute: AppFinanceRouteWithChildren,
   AppInventoryRoute: AppInventoryRoute,
   AppLicensesRoute: AppLicensesRoute,
   AppMarketingRoute: AppMarketingRoute,

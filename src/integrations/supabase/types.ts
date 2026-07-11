@@ -486,6 +486,27 @@ export type Database = {
           },
         ]
       }
+      user_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          permission: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -525,6 +546,10 @@ export type Database = {
           permissions: string[]
           role: string
         }[]
+      }
+      admin_set_permissions: {
+        Args: { _perms: string[]; _user_id: string }
+        Returns: undefined
       }
       admin_set_role: {
         Args: {

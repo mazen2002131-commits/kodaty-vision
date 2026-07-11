@@ -15,7 +15,7 @@ export const Route = createFileRoute("/auth")({
   }),
 });
 
-type Mode = "signin" | "signup";
+
 
 function AuthPage() {
   const navigate = useNavigate();

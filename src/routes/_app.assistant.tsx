@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, Bot, User, TrendingUp, Users, KeyRound, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/assistant")({
   component: Assistant,
@@ -17,14 +18,38 @@ const suggestions = [
   { icon: RefreshCw, text: "من العملاء الذين ينتهي اشتراكهم خلال 7 أيام؟" },
 ];
 
-const canned: Record<string, string> = {
-  "افتراضي":
-    "بناءً على بيانات مساحتك، إليك ملخصاً سريعاً:\n\n• **الإيرادات هذا الشهر**: 486,320 ج.م (+9.2% مقارنة بالشهر السابق)\n• **أفضل منتج**: Canva Pro Annual بـ 302 عملية بيع\n• **تنبيه**: 3 اشتراكات تنتهي خلال 7 أيام تحتاج متابعة\n\nهل تريد أن أرسل تذكيرات التجديد تلقائياً؟",
-};
+async function buildLiveContext(): Promise<string> {
+  try {
+    const since = new Date(Date.now() - 30 * 864e5).toISOString();
+    const [orders, customers, licenses, subs] = await Promise.all([
+      supabase.from("orders").select("total_amount,status,created_at").gte("created_at", since),
+      supabase.from("customers").select("id", { count: "exact", head: true }),
+      supabase.from("licenses").select("status"),
+      supabase.from("subscriptions").select("status,end_date"),
+    ]);
+    const rev = (orders.data ?? [])
+      .filter((o: any) => o.status === "paid" || o.status === "fulfilled")
+      .reduce((s: number, o: any) => s + Number(o.total_amount ?? 0), 0);
+    const ordersCount = orders.data?.length ?? 0;
+    const available = (licenses.data ?? []).filter((l: any) => l.status === "available").length;
+    const sold = (licenses.data ?? []).filter((l: any) => l.status === "sold").length;
+    const soon = (subs.data ?? []).filter(
+      (s: any) => s.end_date && new Date(s.end_date).getTime() - Date.now() < 7 * 864e5,
+    ).length;
+    return [
+      `- إيرادات آخر 30 يوم: ${rev.toLocaleString("ar-EG")} ج.م عبر ${ordersCount} طلب`,
+      `- عدد العملاء الكلي: ${customers.count ?? 0}`,
+      `- مفاتيح متاحة: ${available} · مباعة: ${sold}`,
+      `- اشتراكات تنتهي خلال 7 أيام: ${soon}`,
+    ].join("\n");
+  } catch {
+    return "";
+  }
+}
 
 function Assistant() {
   const [messages, setMessages] = useState<Msg[]>([
-    { role: "assistant", content: "مرحباً منال 👋\nأنا Kodaty AI، مساعدك الذكي. اسألني عن أرباحك، عملائك، مخزونك، أو دعني أنفّذ إجراءات نيابةً عنك." },
+    { role: "assistant", content: "مرحباً 👋\nأنا Kodaty AI، مساعدك الذكي متصل ببياناتك الحية. اسألني عن أرباحك، عملائك، مخزونك، أو دعني أنفّذ إجراءات نيابةً عنك." },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,15 +59,46 @@ function Assistant() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
-  const send = (text: string) => {
+  const send = async (text: string) => {
     if (!text.trim() || loading) return;
-    setMessages(m => [...m, { role: "user", content: text }]);
+    const next: Msg[] = [...messages, { role: "user", content: text }];
+    setMessages(next);
     setInput("");
     setLoading(true);
-    setTimeout(() => {
-      setMessages(m => [...m, { role: "assistant", content: canned["افتراضي"] }]);
+    try {
+      const context = await buildLiveContext();
+      const res = await fetch("/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          context,
+          messages: next.map(m => ({ role: m.role, content: m.content })),
+        }),
+      });
+      if (!res.ok || !res.body) {
+        const err = await res.text().catch(() => "");
+        setMessages(m => [...m, { role: "assistant", content: `تعذر الاتصال بالمساعد. ${err || ""}`.trim() }]);
+        return;
+      }
+      setMessages(m => [...m, { role: "assistant", content: "" }]);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value, { stream: true });
+        setMessages(m => {
+          const copy = m.slice();
+          copy[copy.length - 1] = { role: "assistant", content: acc };
+          return copy;
+        });
+      }
+    } catch (e: any) {
+      setMessages(m => [...m, { role: "assistant", content: `خطأ: ${e?.message ?? "غير معروف"}` }]);
+    } finally {
       setLoading(false);
-    }, 900);
+    }
   };
 
   return (

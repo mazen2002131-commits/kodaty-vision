@@ -56,6 +56,48 @@ export type Database = {
         }
         Relationships: []
       }
+      journal_entries: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          credit_account: string
+          debit_account: string
+          description: string
+          entry_date: string
+          id: string
+          notes: string | null
+          reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          credit_account: string
+          debit_account: string
+          description: string
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          credit_account?: string
+          debit_account?: string
+          description?: string
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          reference?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       licenses: {
         Row: {
           cost: number | null

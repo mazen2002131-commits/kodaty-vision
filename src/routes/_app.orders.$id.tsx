@@ -1,13 +1,13 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowRight, Paperclip, MessageSquare, Send, Download, Copy, KeyRound } from "lucide-react";
-import { orderById, customerById, productById, formatCurrency, paymentLabels, statusLabels, relativeTime } from "@/lib/mock/data";
+import { orderById, customerById, productById, formatCurrency, paymentLabels, statusLabels, relativeTime, type Order } from "@/lib/mock/data";
 import { StatusPill, Avatar, PriorityBadge } from "@/components/app/pills";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/orders/$id")({
   component: OrderDetail,
   head: ({ params }) => ({ meta: [{ title: `طلب ${params.id} — Kodaty` }] }),
-  loader: ({ params }) => {
+  loader: ({ params }): Order => {
     const o = orderById(params.id);
     if (!o) throw notFound();
     return o;

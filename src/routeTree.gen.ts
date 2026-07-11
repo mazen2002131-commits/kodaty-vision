@@ -11,6 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as AppSubscriptionsRouteImport } from './routes/_app.subscriptions'
+import { Route as AppOrdersRouteImport } from './routes/_app.orders'
+import { Route as AppLicensesRouteImport } from './routes/_app.licenses'
+import { Route as AppCustomersRouteImport } from './routes/_app.customers'
+import { Route as AppOrdersIndexRouteImport } from './routes/_app.orders.index'
+import { Route as AppCustomersIndexRouteImport } from './routes/_app.customers.index'
+import { Route as AppOrdersIdRouteImport } from './routes/_app.orders.$id'
+import { Route as AppCustomersIdRouteImport } from './routes/_app.customers.$id'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -21,24 +29,113 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSubscriptionsRoute = AppSubscriptionsRouteImport.update({
+  id: '/subscriptions',
+  path: '/subscriptions',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOrdersRoute = AppOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLicensesRoute = AppLicensesRouteImport.update({
+  id: '/licenses',
+  path: '/licenses',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCustomersRoute = AppCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOrdersIndexRoute = AppOrdersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppOrdersRoute,
+} as any)
+const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppCustomersRoute,
+} as any)
+const AppOrdersIdRoute = AppOrdersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppOrdersRoute,
+} as any)
+const AppCustomersIdRoute = AppCustomersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppCustomersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/customers': typeof AppCustomersRouteWithChildren
+  '/licenses': typeof AppLicensesRoute
+  '/orders': typeof AppOrdersRouteWithChildren
+  '/subscriptions': typeof AppSubscriptionsRoute
+  '/customers/$id': typeof AppCustomersIdRoute
+  '/orders/$id': typeof AppOrdersIdRoute
+  '/customers/': typeof AppCustomersIndexRoute
+  '/orders/': typeof AppOrdersIndexRoute
 }
 export interface FileRoutesByTo {
+  '/licenses': typeof AppLicensesRoute
+  '/subscriptions': typeof AppSubscriptionsRoute
   '/': typeof AppIndexRoute
+  '/customers/$id': typeof AppCustomersIdRoute
+  '/orders/$id': typeof AppOrdersIdRoute
+  '/customers': typeof AppCustomersIndexRoute
+  '/orders': typeof AppOrdersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/_app/customers': typeof AppCustomersRouteWithChildren
+  '/_app/licenses': typeof AppLicensesRoute
+  '/_app/orders': typeof AppOrdersRouteWithChildren
+  '/_app/subscriptions': typeof AppSubscriptionsRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/customers/$id': typeof AppCustomersIdRoute
+  '/_app/orders/$id': typeof AppOrdersIdRoute
+  '/_app/customers/': typeof AppCustomersIndexRoute
+  '/_app/orders/': typeof AppOrdersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/customers'
+    | '/licenses'
+    | '/orders'
+    | '/subscriptions'
+    | '/customers/$id'
+    | '/orders/$id'
+    | '/customers/'
+    | '/orders/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/_app' | '/_app/'
+  to:
+    | '/licenses'
+    | '/subscriptions'
+    | '/'
+    | '/customers/$id'
+    | '/orders/$id'
+    | '/customers'
+    | '/orders'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/_app/customers'
+    | '/_app/licenses'
+    | '/_app/orders'
+    | '/_app/subscriptions'
+    | '/_app/'
+    | '/_app/customers/$id'
+    | '/_app/orders/$id'
+    | '/_app/customers/'
+    | '/_app/orders/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -61,14 +158,106 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/subscriptions': {
+      id: '/_app/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/subscriptions'
+      preLoaderRoute: typeof AppSubscriptionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/orders': {
+      id: '/_app/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof AppOrdersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/licenses': {
+      id: '/_app/licenses'
+      path: '/licenses'
+      fullPath: '/licenses'
+      preLoaderRoute: typeof AppLicensesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/customers': {
+      id: '/_app/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof AppCustomersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/orders/': {
+      id: '/_app/orders/'
+      path: '/'
+      fullPath: '/orders/'
+      preLoaderRoute: typeof AppOrdersIndexRouteImport
+      parentRoute: typeof AppOrdersRoute
+    }
+    '/_app/customers/': {
+      id: '/_app/customers/'
+      path: '/'
+      fullPath: '/customers/'
+      preLoaderRoute: typeof AppCustomersIndexRouteImport
+      parentRoute: typeof AppCustomersRoute
+    }
+    '/_app/orders/$id': {
+      id: '/_app/orders/$id'
+      path: '/$id'
+      fullPath: '/orders/$id'
+      preLoaderRoute: typeof AppOrdersIdRouteImport
+      parentRoute: typeof AppOrdersRoute
+    }
+    '/_app/customers/$id': {
+      id: '/_app/customers/$id'
+      path: '/$id'
+      fullPath: '/customers/$id'
+      preLoaderRoute: typeof AppCustomersIdRouteImport
+      parentRoute: typeof AppCustomersRoute
+    }
   }
 }
 
+interface AppCustomersRouteChildren {
+  AppCustomersIdRoute: typeof AppCustomersIdRoute
+  AppCustomersIndexRoute: typeof AppCustomersIndexRoute
+}
+
+const AppCustomersRouteChildren: AppCustomersRouteChildren = {
+  AppCustomersIdRoute: AppCustomersIdRoute,
+  AppCustomersIndexRoute: AppCustomersIndexRoute,
+}
+
+const AppCustomersRouteWithChildren = AppCustomersRoute._addFileChildren(
+  AppCustomersRouteChildren,
+)
+
+interface AppOrdersRouteChildren {
+  AppOrdersIdRoute: typeof AppOrdersIdRoute
+  AppOrdersIndexRoute: typeof AppOrdersIndexRoute
+}
+
+const AppOrdersRouteChildren: AppOrdersRouteChildren = {
+  AppOrdersIdRoute: AppOrdersIdRoute,
+  AppOrdersIndexRoute: AppOrdersIndexRoute,
+}
+
+const AppOrdersRouteWithChildren = AppOrdersRoute._addFileChildren(
+  AppOrdersRouteChildren,
+)
+
 interface AppRouteChildren {
+  AppCustomersRoute: typeof AppCustomersRouteWithChildren
+  AppLicensesRoute: typeof AppLicensesRoute
+  AppOrdersRoute: typeof AppOrdersRouteWithChildren
+  AppSubscriptionsRoute: typeof AppSubscriptionsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppCustomersRoute: AppCustomersRouteWithChildren,
+  AppLicensesRoute: AppLicensesRoute,
+  AppOrdersRoute: AppOrdersRouteWithChildren,
+  AppSubscriptionsRoute: AppSubscriptionsRoute,
   AppIndexRoute: AppIndexRoute,
 }
 

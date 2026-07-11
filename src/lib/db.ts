@@ -444,6 +444,28 @@ export function useCreateProduct() {
   });
 }
 
+export function useUpdateProduct() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: { id: string; name?: string; category?: string | null; price?: number; cost_price?: number; billing_type?: BillingType; active?: boolean }) => {
+      const { error } = await supabase.from("products").update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
+  });
+}
+
+export function useDeleteProduct() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("products").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
+  });
+}
+
 export function daysBetween(iso: string): number {
   return Math.round((new Date(iso).getTime() - Date.now()) / 86400000);
 }

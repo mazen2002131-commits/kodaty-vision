@@ -488,3 +488,178 @@ export function daysBetween(iso: string): number {
   return Math.round((new Date(iso).getTime() - Date.now()) / 86400000);
 }
 
+
+// ---------- Marketing ----------
+export type Campaign = {
+  id: string;
+  name: string;
+  channel: string;
+  reach: number;
+  orders: number;
+  revenue: number;
+  status: string;
+  starts_at: string | null;
+  ends_at: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+export type Coupon = {
+  id: string;
+  code: string;
+  discount_type: "percent" | "fixed";
+  discount_value: number;
+  uses: number;
+  cap: number;
+  expires_at: string | null;
+  active: boolean;
+  created_at: string;
+};
+
+export type Referral = {
+  id: string;
+  customer_id: string | null;
+  name: string;
+  refs_count: number;
+  earned: number;
+  tier: string;
+  created_at: string;
+};
+
+export function useCampaigns() {
+  return useQuery({
+    queryKey: ["campaigns"],
+    queryFn: async (): Promise<Campaign[]> => {
+      const { data, error } = await supabase.from("marketing_campaigns").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as Campaign[];
+    },
+  });
+}
+
+export function useCreateCampaign() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: Partial<Campaign>) => {
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await supabase.from("marketing_campaigns").insert({
+        name: p.name!, channel: p.channel ?? "other",
+        reach: p.reach ?? 0, orders: p.orders ?? 0, revenue: p.revenue ?? 0,
+        status: p.status ?? "active", starts_at: p.starts_at ?? null, ends_at: p.ends_at ?? null,
+        notes: p.notes ?? null, created_by: u.user?.id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["campaigns"] }),
+  });
+}
+
+export function useUpdateCampaign() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: { id: string } & Partial<Campaign>) => {
+      const { error } = await supabase.from("marketing_campaigns").update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["campaigns"] }),
+  });
+}
+
+export function useDeleteCampaign() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("marketing_campaigns").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["campaigns"] }),
+  });
+}
+
+export function useCoupons() {
+  return useQuery({
+    queryKey: ["coupons"],
+    queryFn: async (): Promise<Coupon[]> => {
+      const { data, error } = await supabase.from("marketing_coupons").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as Coupon[];
+    },
+  });
+}
+
+export function useCreateCoupon() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: Partial<Coupon>) => {
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await supabase.from("marketing_coupons").insert({
+        code: p.code!, discount_type: p.discount_type ?? "percent",
+        discount_value: p.discount_value ?? 0, cap: p.cap ?? 100,
+        expires_at: p.expires_at ?? null, active: p.active ?? true,
+        created_by: u.user?.id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["coupons"] }),
+  });
+}
+
+export function useDeleteCoupon() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("marketing_coupons").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["coupons"] }),
+  });
+}
+
+export function useReferrals() {
+  return useQuery({
+    queryKey: ["referrals"],
+    queryFn: async (): Promise<Referral[]> => {
+      const { data, error } = await supabase.from("marketing_referrals").select("*").order("earned", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as Referral[];
+    },
+  });
+}
+
+export function useCreateReferral() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: Partial<Referral>) => {
+      const { error } = await supabase.from("marketing_referrals").insert({
+        name: p.name!, customer_id: p.customer_id ?? null,
+        refs_count: p.refs_count ?? 0, earned: p.earned ?? 0, tier: p.tier ?? "bronze",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["referrals"] }),
+  });
+}
+
+export function useDeleteReferral() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("marketing_referrals").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["referrals"] }),
+  });
+}
+
+// ---------- Order licenses ----------
+export function useOrderLicenses(orderId: string) {
+  return useQuery({
+    queryKey: ["order-licenses", orderId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("licenses").select("id,key,product_name,status,expires_at").eq("sold_order_id", orderId);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!orderId,
+  });
+}

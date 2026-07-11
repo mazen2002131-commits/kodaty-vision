@@ -248,6 +248,137 @@ export type Database = {
           },
         ]
       }
+      marketing_campaigns: {
+        Row: {
+          channel: string
+          created_at: string
+          created_by: string | null
+          ends_at: string | null
+          id: string
+          name: string
+          notes: string | null
+          orders: number
+          reach: number
+          revenue: number
+          starts_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          orders?: number
+          reach?: number
+          revenue?: number
+          starts_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          orders?: number
+          reach?: number
+          revenue?: number
+          starts_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      marketing_coupons: {
+        Row: {
+          active: boolean
+          cap: number
+          code: string
+          created_at: string
+          created_by: string | null
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          updated_at: string
+          uses: number
+        }
+        Insert: {
+          active?: boolean
+          cap?: number
+          code: string
+          created_at?: string
+          created_by?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          updated_at?: string
+          uses?: number
+        }
+        Update: {
+          active?: boolean
+          cap?: number
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          updated_at?: string
+          uses?: number
+        }
+        Relationships: []
+      }
+      marketing_referrals: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          earned: number
+          id: string
+          name: string
+          refs_count: number
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          earned?: number
+          id?: string
+          name: string
+          refs_count?: number
+          tier?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          earned?: number
+          id?: string
+          name?: string
+          refs_count?: number
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_referrals_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string

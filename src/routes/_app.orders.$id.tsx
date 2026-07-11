@@ -2,10 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowRight, Download, KeyRound, Copy, Trash2, Save, Loader2 } from "lucide-react";
 import {
-  useOrder, useUpdateOrder, useUpdateOrderItem, useDeleteOrder,
+  useOrder, useUpdateOrder, useUpdateOrderItem, useDeleteOrder, useOrderLicenses,
   avatarColor, formatEGP,
   type OrderStatus, type OrderPriority,
 } from "@/lib/db";
+
 import { StatusPill, Avatar, PriorityBadge } from "@/components/app/pills";
 import { toast } from "sonner";
 import {
@@ -65,7 +66,7 @@ function OrderDetail() {
 
   const c = o.customers;
   const total = Number(o.total ?? 0);
-  const mockKey = `KDT-${o.code.replace(/[^0-9]/g, "").padStart(5, "0")}-${o.id.slice(0, 4).toUpperCase()}-DEMO`;
+
 
   const dirty = item && (
     Number(price) !== Number(item.unit_price) ||
@@ -220,21 +221,9 @@ function OrderDetail() {
             })()}
           </div>
 
-          {/* Delivered key (placeholder) */}
-          <div className="surface-elevated p-5">
-            <div className="mb-3 flex items-center gap-2">
-              <KeyRound className="h-4 w-4 text-primary" />
-              <div className="text-sm font-semibold">مفتاح التفعيل</div>
-            </div>
-            <div className="flex items-center gap-2 rounded-lg border border-dashed border-primary/40 bg-brand-50/60 px-3 py-2.5">
-              <code className="num flex-1 select-all text-sm tracking-wider">{mockKey}</code>
-              <button
-                onClick={() => { navigator.clipboard.writeText(mockKey); toast.success("تم نسخ المفتاح"); }}
-                className="rounded-md border border-border bg-surface px-2 py-1 text-xs hover:bg-accent"
-              ><Copy className="me-1 inline h-3 w-3" /> نسخ</button>
-            </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">سيُستبدل بالمفتاح الفعلي من الخزنة عند التسليم.</p>
-          </div>
+          {/* Delivered keys from Vault */}
+          <OrderKeys orderId={o.id} />
+
         </div>
 
         <div className="space-y-4">
@@ -285,3 +274,36 @@ function OrderDetail() {
 
 const numInput = "w-24 rounded-md border border-border bg-surface-sunken px-2 py-1 text-sm num outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
 const selectInput = "w-full rounded-md border border-border bg-surface-sunken px-2 py-1.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
+
+function OrderKeys({ orderId }: { orderId: string }) {
+  const { data: keys = [] } = useOrderLicenses(orderId);
+  return (
+    <div className="surface-elevated p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <KeyRound className="h-4 w-4 text-primary" />
+        <div className="text-sm font-semibold">مفاتيح التفعيل</div>
+      </div>
+      {keys.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
+          لم يتم تسليم مفاتيح بعد. عند تحويل الطلب إلى «مُسلَّم» يتم ربط المفاتيح من الخزنة.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {keys.map(k => (
+            <div key={k.id} className="flex items-center gap-2 rounded-lg border border-primary/30 bg-brand-50/50 px-3 py-2.5">
+              <div className="flex-1 min-w-0">
+                <code className="num block select-all truncate text-sm tracking-wider">{k.key}</code>
+                {k.product_name && <div className="mt-0.5 text-[11px] text-muted-foreground">{k.product_name}</div>}
+              </div>
+              <button
+                onClick={() => { navigator.clipboard.writeText(k.key); toast.success("تم نسخ المفتاح"); }}
+                className="rounded-md border border-border bg-surface px-2 py-1 text-xs hover:bg-accent"
+              ><Copy className="me-1 inline h-3 w-3" /> نسخ</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+

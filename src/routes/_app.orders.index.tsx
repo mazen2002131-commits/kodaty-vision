@@ -263,7 +263,7 @@ function OrderRow({ o, relative }: { o: ReturnType<typeof useOrders>["data"] ext
   }
 
   return (
-    <tr className="border-b border-border/60 last:border-0 hover:bg-accent/30">
+    <tr className="group border-b border-border/60 last:border-0 hover:bg-accent/30">
       <td className="px-4 py-3">
         <Link to="/orders/$id" params={{ id: o.id }} className="num font-medium text-primary hover:underline">{o.code}</Link>
       </td>

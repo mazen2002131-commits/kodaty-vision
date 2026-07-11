@@ -86,11 +86,9 @@ function AuthPage() {
             </div>
           </div>
 
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {mode === "signin" ? "أهلاً بعودتك" : "أنشئ حسابك"}
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight">أهلاً بعودتك</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "signin" ? "سجّل الدخول للوصول إلى مساحتك." : "ابدأ إدارة تراخيصك خلال دقائق."}
+            سجّل الدخول للوصول إلى مساحتك.
           </p>
 
           <button
@@ -108,14 +106,6 @@ function AuthPage() {
           </div>
 
           <form onSubmit={submit} className="space-y-3">
-            {mode === "signup" && (
-              <Field label="الاسم الكامل">
-                <input
-                  value={fullName} onChange={e => setFullName(e.target.value)}
-                  className="input" placeholder="مثال: منال العتيبي"
-                />
-              </Field>
-            )}
             <Field label="البريد الإلكتروني">
               <input
                 type="email" required value={email} onChange={e => setEmail(e.target.value)}
@@ -137,19 +127,12 @@ function AuthPage() {
               className="flex w-full items-center justify-center gap-2 rounded-lg brand-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-brand transition hover:opacity-95 disabled:opacity-60"
             >
               {busy && <Loader2 className="size-4 animate-spin" />}
-              {mode === "signin" ? "تسجيل الدخول" : "إنشاء الحساب"}
+              تسجيل الدخول
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            {mode === "signin" ? "ليس لديك حساب؟" : "لديك حساب بالفعل؟"}{" "}
-            <button
-              type="button"
-              onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(null); setInfo(null); }}
-              className="font-medium text-primary hover:underline"
-            >
-              {mode === "signin" ? "أنشئ حساباً" : "سجّل الدخول"}
-            </button>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            التسجيل الذاتي مغلق. للحصول على حساب تواصل مع مدير المساحة.
           </p>
         </div>
       </div>

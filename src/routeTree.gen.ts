@@ -25,6 +25,7 @@ import { Route as AppInventoryRouteImport } from './routes/_app.inventory'
 import { Route as AppFinanceRouteImport } from './routes/_app.finance'
 import { Route as AppCustomersRouteImport } from './routes/_app.customers'
 import { Route as AppAutomationRouteImport } from './routes/_app.automation'
+import { Route as AppAssistantRouteImport } from './routes/_app.assistant'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
 import { Route as AppOrdersIndexRouteImport } from './routes/_app.orders.index'
 import { Route as AppCustomersIndexRouteImport } from './routes/_app.customers.index'
@@ -110,6 +111,11 @@ const AppAutomationRoute = AppAutomationRouteImport.update({
   path: '/automation',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAssistantRoute = AppAssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -139,6 +145,7 @@ const AppCustomersIdRoute = AppCustomersIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/analytics': typeof AppAnalyticsRoute
+  '/assistant': typeof AppAssistantRoute
   '/automation': typeof AppAutomationRoute
   '/customers': typeof AppCustomersRouteWithChildren
   '/finance': typeof AppFinanceRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/analytics': typeof AppAnalyticsRoute
+  '/assistant': typeof AppAssistantRoute
   '/automation': typeof AppAutomationRoute
   '/finance': typeof AppFinanceRoute
   '/inventory': typeof AppInventoryRoute
@@ -182,6 +190,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/_app/analytics': typeof AppAnalyticsRoute
+  '/_app/assistant': typeof AppAssistantRoute
   '/_app/automation': typeof AppAutomationRoute
   '/_app/customers': typeof AppCustomersRouteWithChildren
   '/_app/finance': typeof AppFinanceRoute
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/analytics'
+    | '/assistant'
     | '/automation'
     | '/customers'
     | '/finance'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/analytics'
+    | '/assistant'
     | '/automation'
     | '/finance'
     | '/inventory'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/_app/analytics'
+    | '/_app/assistant'
     | '/_app/automation'
     | '/_app/customers'
     | '/_app/finance'
@@ -388,6 +400,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAutomationRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/assistant': {
+      id: '/_app/assistant'
+      path: '/assistant'
+      fullPath: '/assistant'
+      preLoaderRoute: typeof AppAssistantRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/analytics': {
       id: '/_app/analytics'
       path: '/analytics'
@@ -456,6 +475,7 @@ const AppOrdersRouteWithChildren = AppOrdersRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppAssistantRoute: typeof AppAssistantRoute
   AppAutomationRoute: typeof AppAutomationRoute
   AppCustomersRoute: typeof AppCustomersRouteWithChildren
   AppFinanceRoute: typeof AppFinanceRoute
@@ -475,6 +495,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
+  AppAssistantRoute: AppAssistantRoute,
   AppAutomationRoute: AppAutomationRoute,
   AppCustomersRoute: AppCustomersRouteWithChildren,
   AppFinanceRoute: AppFinanceRoute,
@@ -500,13 +521,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

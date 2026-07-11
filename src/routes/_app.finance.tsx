@@ -59,6 +59,7 @@ function Kpi({ label, value, delta, icon: Icon, tone }: {
 }
 
 function Finance() {
+  const navigate = useNavigate();
   const totalRevenue = orders.reduce((s, o) => s + o.amount, 0);
   const totalCost = orders.reduce((s, o) => s + o.cost, 0);
   const profit = totalRevenue - totalCost;
@@ -69,14 +70,37 @@ function Finance() {
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight">المالية</h1>
-          <p className="mt-1 text-sm text-muted-foreground">تدفقاتك النقدية، فواتيرك، ومصاريفك في مكان واحد.</p>
+          <h1 className="font-display text-2xl font-bold tracking-tight">المالية والمحاسبة</h1>
+          <p className="mt-1 text-sm text-muted-foreground">تدفقاتك النقدية، فواتيرك، مصاريفك، والقيود المحاسبية.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground hover:bg-secondary">
+          <Link
+            to="/finance/journal"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground hover:bg-secondary"
+          >
+            <BookOpen className="h-4 w-4" /> القيود المحاسبية
+          </Link>
+          <button
+            onClick={() => {
+              const csv = ["الفاتورة,العميل,المبلغ,الحالة,التاريخ"]
+                .concat(invoices.map(i => {
+                  const c = customerById(i.customerId);
+                  return `${i.invoice},${c.name},${i.amount},${i.paid ? "مدفوعة" : "قيد الدفع"},${new Date(i.createdAt).toISOString()}`;
+                })).join("\n");
+              const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url; a.download = `invoices-${Date.now()}.csv`; a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground hover:bg-secondary"
+          >
             <Download className="h-4 w-4" /> تصدير CSV
           </button>
-          <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-brand hover:bg-brand-700">
+          <button
+            onClick={() => navigate({ to: "/orders", search: { new: 1 } as never })}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-brand hover:bg-brand-700"
+          >
             <Plus className="h-4 w-4" /> فاتورة جديدة
           </button>
         </div>

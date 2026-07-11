@@ -18,9 +18,11 @@ export type Product = {
   name: string;
   category: string | null;
   price: number;
+  cost_price: number;
   currency: string;
   active: boolean;
 };
+
 
 export type Order = {
   id: string;
@@ -34,7 +36,7 @@ export type Order = {
   tags: string[];
   created_at: string;
   customers?: Pick<Customer, "id" | "name" | "email"> | null;
-  order_items?: { id: string; product_name: string; qty: number; unit_price: number }[];
+  order_items?: { id: string; product_name: string; qty: number; unit_price: number; unit_cost?: number }[];
 };
 
 // ---------- Customers ----------
@@ -98,7 +100,7 @@ export function useOrders() {
     queryFn: async (): Promise<Order[]> => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, customers(id,name,email), order_items(id,product_name,qty,unit_price)")
+        .select("*, customers(id,name,email), order_items(id,product_name,qty,unit_price,unit_cost)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Order[];
@@ -117,6 +119,7 @@ export function useCreateOrder() {
       product_id: string;
       product_name: string;
       unit_price: number;
+      unit_cost?: number;
       qty: number;
       priority?: OrderPriority;
       status?: OrderStatus;
@@ -142,10 +145,12 @@ export function useCreateOrder() {
         product_name: input.product_name,
         qty: input.qty,
         unit_price: input.unit_price,
+        unit_cost: input.unit_cost ?? 0,
       });
       if (itemErr) throw itemErr;
       return order;
     },
+
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
     },
@@ -183,7 +188,7 @@ export function useCustomerOrders(customerId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, order_items(id,product_name,qty,unit_price)")
+        .select("*, order_items(id,product_name,qty,unit_price,unit_cost)")
         .eq("customer_id", customerId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -198,7 +203,7 @@ export function useOrder(id: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, customers(id,name,email,phone,company,tier), order_items(id,product_id,product_name,qty,unit_price)")
+        .select("*, customers(id,name,email,phone,company,tier), order_items(id,product_id,product_name,qty,unit_price,unit_cost)")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -342,16 +347,18 @@ export function useCreateTicket() {
 export function useCreateProduct() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; category?: string; price: number }) => {
+    mutationFn: async (input: { name: string; category?: string; price: number; cost_price?: number }) => {
       const { error } = await supabase.from("products").insert({
         name: input.name,
         category: input.category ?? null,
         price: input.price,
+        cost_price: input.cost_price ?? 0,
         currency: "EGP",
         active: true,
       });
       if (error) throw error;
     },
+
     onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
   });
 }

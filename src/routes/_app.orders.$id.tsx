@@ -64,26 +64,44 @@ function OrderDetail() {
                   <tr>
                     <th className="px-3 py-2 text-start font-medium">المنتج</th>
                     <th className="px-3 py-2 text-start font-medium">الكمية</th>
-                    <th className="px-3 py-2 text-start font-medium">السعر</th>
+                    <th className="px-3 py-2 text-start font-medium">التكلفة</th>
+                    <th className="px-3 py-2 text-start font-medium">سعر البيع</th>
+                    <th className="px-3 py-2 text-start font-medium">الربح</th>
                     <th className="px-3 py-2 text-start font-medium">الإجمالي</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(o.order_items ?? []).map(it => (
-                    <tr key={it.id}>
-                      <td className="px-3 py-3">{it.product_name}</td>
-                      <td className="px-3 py-3 num">{it.qty}</td>
-                      <td className="px-3 py-3 num">{formatEGP(Number(it.unit_price))}</td>
-                      <td className="px-3 py-3 num font-medium">{formatEGP(Number(it.unit_price) * it.qty)}</td>
-                    </tr>
-                  ))}
+                  {(o.order_items ?? []).map(it => {
+                    const cost = Number(it.unit_cost ?? 0);
+                    const price = Number(it.unit_price);
+                    const profit = (price - cost) * it.qty;
+                    return (
+                      <tr key={it.id}>
+                        <td className="px-3 py-3">{it.product_name}</td>
+                        <td className="px-3 py-3 num">{it.qty}</td>
+                        <td className="px-3 py-3 num text-muted-foreground">{formatEGP(cost)}</td>
+                        <td className="px-3 py-3 num">{formatEGP(price)}</td>
+                        <td className="px-3 py-3 num text-success">{formatEGP(profit)}</td>
+                        <td className="px-3 py-3 num font-medium">{formatEGP(price * it.qty)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
-            <dl className="mt-4 space-y-1 text-sm">
-              <div className="flex justify-between border-t border-border pt-2 text-base font-semibold"><dt>الإجمالي</dt><dd className="num">{formatEGP(total)}</dd></div>
-            </dl>
+            {(() => {
+              const totalCost = (o.order_items ?? []).reduce((s, it) => s + Number(it.unit_cost ?? 0) * it.qty, 0);
+              const totalProfit = total - totalCost;
+              return (
+                <dl className="mt-4 space-y-1 text-sm">
+                  <div className="flex justify-between text-muted-foreground"><dt>إجمالي التكلفة</dt><dd className="num">{formatEGP(totalCost)}</dd></div>
+                  <div className="flex justify-between text-success"><dt>صافي الربح</dt><dd className="num">{formatEGP(totalProfit)}</dd></div>
+                  <div className="flex justify-between border-t border-border pt-2 text-base font-semibold"><dt>الإجمالي</dt><dd className="num">{formatEGP(total)}</dd></div>
+                </dl>
+              );
+            })()}
           </div>
+
 
           {/* Delivered key (placeholder) */}
           <div className="surface-elevated p-5">

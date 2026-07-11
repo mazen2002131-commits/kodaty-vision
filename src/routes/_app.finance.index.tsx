@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_app/finance")({
+export const Route = createFileRoute("/_app/finance/")({
   component: () => (<RequireAdmin><Finance /></RequireAdmin>),
   head: () => ({ meta: [{ title: "المالية والمحاسبة — Kodaty" }] }),
 });
@@ -36,15 +36,20 @@ function Finance() {
 
   const stats = useMemo(() => {
     const revenue = orders.reduce((s, o) => s + Number(o.total), 0);
-    const paid = orders.filter(o => o.status === "delivered").reduce((s, o) => s + Number(o.total), 0);
+    const paidOrders = orders.filter(o => o.status === "delivered");
+    const paid = paidOrders.reduce((s, o) => s + Number(o.total), 0);
+    const cogs = paidOrders.reduce((s, o) =>
+      s + (o.order_items ?? []).reduce((x, it) => x + Number(it.unit_cost ?? 0) * Number(it.qty), 0), 0);
     const unpaid = orders.filter(o => o.status === "pending" || o.status === "processing")
       .reduce((s, o) => s + Number(o.total), 0);
-    const expenses = journal
+    const otherExpenses = journal
       .filter(e => e.debit_account.startsWith("5"))
       .reduce((s, e) => s + Number(e.amount), 0);
+    const expenses = cogs + otherExpenses;
     const profit = paid - expenses;
-    return { revenue, paid, unpaid, expenses, profit, unpaidCount: orders.filter(o => o.status !== "delivered" && o.status !== "cancelled" && o.status !== "refunded").length };
+    return { revenue, paid, unpaid, expenses, cogs, otherExpenses, profit, unpaidCount: orders.filter(o => o.status !== "delivered" && o.status !== "cancelled" && o.status !== "refunded").length };
   }, [orders, journal]);
+
 
   // Cash flow series (last 30 days)
   const cashSeries = useMemo(() => {
@@ -123,12 +128,14 @@ function Finance() {
       </div>
 
       {/* KPIs */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Kpi label="إجمالي الإيرادات" value={formatEGP(stats.revenue)} delta={{ v: `${orders.length} طلب`, up: true }} icon={Wallet} tone="brand" />
         <Kpi label="مقبوضات" value={formatEGP(stats.paid)} delta={{ v: "طلبات مُسلّمة", up: true }} icon={TrendingUp} tone="success" />
-        <Kpi label="مصروفات" value={formatEGP(stats.expenses)} delta={{ v: "من القيود", up: false }} icon={TrendingDown} tone="warning" />
+        <Kpi label="تكلفة البضاعة" value={formatEGP(stats.cogs)} delta={{ v: "COGS", up: false }} icon={TrendingDown} tone="warning" />
+        <Kpi label="صافي الربح" value={formatEGP(stats.profit)} delta={{ v: `مصروفات ${formatEGP(stats.otherExpenses)}`, up: stats.profit >= 0 }} icon={TrendingUp} tone={stats.profit >= 0 ? "success" : "warning"} />
         <Kpi label="فواتير غير مدفوعة" value={formatEGP(stats.unpaid)} delta={{ v: `${stats.unpaidCount} فاتورة`, up: false }} icon={Receipt} tone="info" />
       </div>
+
 
       {/* Charts */}
       <div className="grid gap-4 lg:grid-cols-3">
@@ -357,6 +364,7 @@ function NewInvoiceDialog() {
         product_id: product.id,
         product_name: product.name,
         unit_price: Number(product.price),
+        unit_cost: Number((product as any).cost_price ?? 0),
         qty: form.qty,
         priority: form.priority,
         status: form.status,

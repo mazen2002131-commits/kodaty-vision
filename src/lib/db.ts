@@ -219,3 +219,144 @@ export function avatarColor(seed: string): string {
 export function formatEGP(n: number): string {
   return new Intl.NumberFormat("ar-EG", { style: "currency", currency: "EGP", maximumFractionDigits: 0 }).format(n);
 }
+
+// ---------- Subscriptions ----------
+export type Subscription = {
+  id: string;
+  customer_id: string;
+  product_id: string | null;
+  product_name: string;
+  starts_at: string;
+  ends_at: string;
+  auto_renew: boolean;
+  status: "active" | "expiring" | "expired" | "cancelled";
+  price: number | null;
+  customers?: Pick<Customer, "id" | "name" | "email"> | null;
+};
+
+export function useSubscriptions() {
+  return useQuery({
+    queryKey: ["subscriptions"],
+    queryFn: async (): Promise<Subscription[]> => {
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("*, customers(id,name,email)")
+        .order("ends_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Subscription[];
+    },
+  });
+}
+
+// ---------- Licenses ----------
+export type License = {
+  id: string;
+  product_id: string | null;
+  product_name: string;
+  key: string;
+  status: "available" | "sold" | "reserved" | "revoked";
+  cost: number | null;
+  sold_to: string | null;
+  sold_at: string | null;
+  expires_at: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+export function useLicenses() {
+  return useQuery({
+    queryKey: ["licenses"],
+    queryFn: async (): Promise<License[]> => {
+      const { data, error } = await supabase
+        .from("licenses")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as License[];
+    },
+  });
+}
+
+export function useCreateLicense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { product_id: string; product_name: string; key: string; cost?: number }) => {
+      const { error } = await supabase.from("licenses").insert({
+        product_id: input.product_id,
+        product_name: input.product_name,
+        key: input.key,
+        cost: input.cost ?? null,
+        status: "available",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["licenses"] }),
+  });
+}
+
+// ---------- Tickets ----------
+export type Ticket = {
+  id: string;
+  code: string;
+  customer_id: string | null;
+  subject: string;
+  status: "open" | "pending" | "resolved" | "closed";
+  priority: "low" | "normal" | "high" | "urgent";
+  assignee_id: string | null;
+  created_at: string;
+  updated_at: string;
+  customers?: Pick<Customer, "id" | "name" | "email"> | null;
+};
+
+export function useTickets() {
+  return useQuery({
+    queryKey: ["tickets"],
+    queryFn: async (): Promise<Ticket[]> => {
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("*, customers(id,name,email)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Ticket[];
+    },
+  });
+}
+
+export function useCreateTicket() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { customer_id: string; subject: string; priority?: "low"|"normal"|"high"|"urgent" }) => {
+      const { error } = await supabase.from("tickets").insert({
+        code: "",
+        customer_id: input.customer_id,
+        subject: input.subject,
+        priority: input.priority ?? "normal",
+        status: "open",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tickets"] }),
+  });
+}
+
+export function useCreateProduct() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { name: string; category?: string; price: number }) => {
+      const { error } = await supabase.from("products").insert({
+        name: input.name,
+        category: input.category ?? null,
+        price: input.price,
+        currency: "EGP",
+        active: true,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
+  });
+}
+
+export function daysBetween(iso: string): number {
+  return Math.round((new Date(iso).getTime() - Date.now()) / 86400000);
+}
+

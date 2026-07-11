@@ -128,17 +128,16 @@ export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
           </DropdownMenu>
 
           <DropdownMenu>
-            <DropdownMenuTrigger className="ms-1 flex items-center gap-2 rounded-lg border border-border bg-surface-sunken py-1 ps-2 pe-1 transition hover:border-border-strong">
+            <DropdownMenuTrigger className="ms-1 flex items-center gap-2 rounded-lg py-1 ps-2 pe-1 transition hover:bg-accent">
               <div className="text-end">
-                <div className="text-xs font-medium leading-tight">{profile.name}</div>
+                <div className="text-[12px] font-medium leading-tight">{profile.name}</div>
                 <div className="flex items-center justify-end gap-1 text-[10px] leading-tight text-muted-foreground">
                   {role && (
-                    <span className={`inline-flex items-center gap-0.5 rounded px-1 py-px text-[9px] font-semibold ${isAdmin ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+                    <span className={`inline-flex items-center gap-0.5 rounded px-1 py-px text-[9px] font-semibold ${isAdmin ? "bg-primary/12 text-primary" : "bg-muted text-muted-foreground"}`}>
                       <Shield className="h-2.5 w-2.5" />
                       {isAdmin ? "مدير" : "موظف"}
                     </span>
                   )}
-                  مساحة العمل
                 </div>
               </div>
               <div className="grid h-7 w-7 place-items-center rounded-md brand-gradient text-xs font-semibold text-white">

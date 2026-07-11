@@ -128,12 +128,14 @@ function Finance() {
       </div>
 
       {/* KPIs */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Kpi label="إجمالي الإيرادات" value={formatEGP(stats.revenue)} delta={{ v: `${orders.length} طلب`, up: true }} icon={Wallet} tone="brand" />
         <Kpi label="مقبوضات" value={formatEGP(stats.paid)} delta={{ v: "طلبات مُسلّمة", up: true }} icon={TrendingUp} tone="success" />
-        <Kpi label="مصروفات" value={formatEGP(stats.expenses)} delta={{ v: "من القيود", up: false }} icon={TrendingDown} tone="warning" />
+        <Kpi label="تكلفة البضاعة" value={formatEGP(stats.cogs)} delta={{ v: "COGS", up: false }} icon={TrendingDown} tone="warning" />
+        <Kpi label="صافي الربح" value={formatEGP(stats.profit)} delta={{ v: `مصروفات ${formatEGP(stats.otherExpenses)}`, up: stats.profit >= 0 }} icon={TrendingUp} tone={stats.profit >= 0 ? "success" : "warning"} />
         <Kpi label="فواتير غير مدفوعة" value={formatEGP(stats.unpaid)} delta={{ v: `${stats.unpaidCount} فاتورة`, up: false }} icon={Receipt} tone="info" />
       </div>
+
 
       {/* Charts */}
       <div className="grid gap-4 lg:grid-cols-3">

@@ -31,7 +31,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   // Hydrate from localStorage after mount to avoid SSR mismatch
   useEffect(() => {
-    const stored = (typeof localStorage !== "undefined" && (localStorage.getItem(STORAGE_KEY) as Theme | null)) || "system";
+    const stored = (typeof localStorage !== "undefined" && (localStorage.getItem(STORAGE_KEY) as Theme | null)) || "light";
     setThemeState(stored);
     const r = stored === "system" ? systemPref() : stored;
     setResolved(r);

@@ -8,6 +8,8 @@ import { ShortcutsDialog } from "@/components/app/shortcuts-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/lib/theme";
 import { Loader2 } from "lucide-react";
+import { RoleProvider } from "@/lib/roles";
+import { useRealtimeInvalidate } from "@/lib/realtime";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -116,29 +118,43 @@ function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-dvh w-full bg-surface-sunken">
-      <AppSidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar
-          onOpenPalette={() => setPaletteOpen(true)}
-          onOpenShortcuts={() => setShortcutsOpen(true)}
-        />
-        <main className="flex-1 px-6 py-6">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
-        </main>
+    <RoleProvider>
+      <RealtimeBridge />
+      <div className="flex min-h-dvh w-full bg-surface-sunken">
+        <AppSidebar />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Topbar
+            onOpenPalette={() => setPaletteOpen(true)}
+            onOpenShortcuts={() => setShortcutsOpen(true)}
+          />
+          <main className="flex-1 px-6 py-6">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
+          </main>
+        </div>
+        <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+        <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
       </div>
-      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
-      <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
-    </div>
+    </RoleProvider>
   );
+}
+
+function RealtimeBridge() {
+  useRealtimeInvalidate("orders", [["orders"], ["dashboard"]], {
+    toastOnInsert: (row) => `طلب جديد ${row?.code ?? ""} · ${Number(row?.total_amount ?? 0).toLocaleString("ar-EG")} ج.م`,
+  });
+  useRealtimeInvalidate("tickets", [["tickets"]], {
+    toastOnInsert: (row) => `تذكرة دعم جديدة: ${row?.subject ?? ""}`,
+  });
+  useRealtimeInvalidate("subscriptions", [["subscriptions"]]);
+  return null;
 }

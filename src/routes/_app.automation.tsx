@@ -2,9 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Zap, Plus, Play, Pause, ArrowLeft, Mail, MessageSquare, KeyRound, Bell, RefreshCw, Sparkles, Bot, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RequireAdmin } from "@/components/app/require-admin";
 
 export const Route = createFileRoute("/_app/automation")({
-  component: Automation,
+  component: () => (<RequireAdmin><Automation /></RequireAdmin>),
   head: () => ({ meta: [{ title: "الأتمتة — Kodaty" }] }),
 });
 

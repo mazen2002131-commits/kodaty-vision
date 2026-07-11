@@ -66,7 +66,7 @@ function OrderDetail() {
 
   const c = o.customers;
   const total = Number(o.total ?? 0);
-  const mockKey = `KDT-${o.code.replace(/[^0-9]/g, "").padStart(5, "0")}-${o.id.slice(0, 4).toUpperCase()}-DEMO`;
+
 
   const dirty = item && (
     Number(price) !== Number(item.unit_price) ||

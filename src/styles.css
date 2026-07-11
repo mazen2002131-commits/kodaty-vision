@@ -83,40 +83,40 @@
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 0.875rem;
 
-  /* Brand ramp — anchored on #4F04AC (~ oklch(0.36 0.24 296)) */
-  --brand-50:  oklch(0.975 0.015 296);
-  --brand-100: oklch(0.945 0.035 296);
-  --brand-200: oklch(0.885 0.075 296);
-  --brand-300: oklch(0.79  0.135 296);
-  --brand-400: oklch(0.65  0.20  296);
-  --brand-500: oklch(0.52  0.24  296);
+  /* Brand ramp — anchored on #4F04AC (~ oklch(0.42 0.24 296)) */
+  --brand-50:  oklch(0.980 0.012 296);
+  --brand-100: oklch(0.955 0.028 296);
+  --brand-200: oklch(0.895 0.070 296);
+  --brand-300: oklch(0.80  0.130 296);
+  --brand-400: oklch(0.66  0.195 296);
+  --brand-500: oklch(0.53  0.235 296);
   --brand-600: oklch(0.42  0.245 296);   /* ≈ #4F04AC */
   --brand-700: oklch(0.36  0.235 296);
   --brand-800: oklch(0.29  0.19  296);
   --brand-900: oklch(0.22  0.14  296);
   --brand-950: oklch(0.15  0.09  296);
 
-  /* Neutrals — cool near-black w/ hint of violet */
-  --background: oklch(0.985 0.004 285);
-  --foreground: oklch(0.16 0.02 285);
+  /* Stripe-inspired airy neutrals */
+  --background: oklch(0.985 0.003 285);
+  --foreground: oklch(0.17 0.02 285);
   --surface: oklch(1 0 0);
   --surface-raised: oklch(1 0 0);
-  --surface-sunken: oklch(0.965 0.006 285);
+  --surface-sunken: oklch(0.975 0.004 285);
 
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.16 0.02 285);
+  --card-foreground: oklch(0.17 0.02 285);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.16 0.02 285);
+  --popover-foreground: oklch(0.17 0.02 285);
 
   --primary: var(--brand-600);
-  --primary-foreground: oklch(0.985 0.004 285);
-  --secondary: oklch(0.955 0.01 285);
-  --secondary-foreground: oklch(0.22 0.03 285);
-  --muted: oklch(0.965 0.006 285);
-  --muted-foreground: oklch(0.5 0.02 285);
-  --accent: oklch(0.955 0.02 296);
+  --primary-foreground: oklch(0.99 0.002 285);
+  --secondary: oklch(0.96 0.006 285);
+  --secondary-foreground: oklch(0.24 0.03 285);
+  --muted: oklch(0.968 0.005 285);
+  --muted-foreground: oklch(0.52 0.02 285);
+  --accent: oklch(0.96 0.018 296);
   --accent-foreground: var(--brand-700);
 
   --destructive: oklch(0.58 0.22 25);
@@ -128,30 +128,36 @@
   --info: oklch(0.62 0.17 240);
   --info-foreground: oklch(0.99 0 0);
 
-  --border: oklch(0.92 0.008 285);
-  --border-strong: oklch(0.86 0.012 285);
-  --input: oklch(0.92 0.008 285);
+  --border: oklch(0.925 0.005 285);
+  --border-strong: oklch(0.87 0.008 285);
+  --input: oklch(0.92 0.006 285);
   --ring: var(--brand-500);
 
   --chart-1: var(--brand-600);
-  --chart-2: oklch(0.65 0.2 296);
+  --chart-2: oklch(0.66 0.19 296);
   --chart-3: oklch(0.62 0.17 240);
   --chart-4: oklch(0.72 0.16 190);
   --chart-5: oklch(0.75 0.16 75);
 
-  --sidebar: oklch(0.16 0.03 285);
-  --sidebar-foreground: oklch(0.86 0.02 285);
-  --sidebar-primary: var(--brand-400);
+  /* Sidebar — Stripe-style: white with brand accent */
+  --sidebar: oklch(0.993 0.002 285);
+  --sidebar-foreground: oklch(0.32 0.02 285);
+  --sidebar-primary: var(--brand-600);
   --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.22 0.04 285);
-  --sidebar-accent-foreground: oklch(0.98 0.005 285);
-  --sidebar-border: oklch(0.24 0.04 285);
-  --sidebar-ring: var(--brand-400);
+  --sidebar-accent: oklch(0.96 0.018 296);
+  --sidebar-accent-foreground: var(--brand-700);
+  --sidebar-border: oklch(0.928 0.005 285);
+  --sidebar-ring: var(--brand-500);
 
   --gradient-brand: linear-gradient(135deg, var(--brand-500), var(--brand-700));
-  --gradient-brand-soft: linear-gradient(135deg, var(--brand-50), oklch(0.99 0.005 285));
-  --gradient-mesh: radial-gradient(1200px 600px at 100% 0%, oklch(0.42 0.24 296 / 0.18), transparent 60%),
-                   radial-gradient(900px 500px at 0% 100%, oklch(0.62 0.2 296 / 0.12), transparent 55%);
+  --gradient-brand-soft: linear-gradient(135deg, var(--brand-50), oklch(0.995 0.003 285));
+  --gradient-mesh: radial-gradient(1200px 600px at 100% 0%, oklch(0.42 0.24 296 / 0.10), transparent 60%),
+                   radial-gradient(900px 500px at 0% 100%, oklch(0.62 0.2 296 / 0.06), transparent 55%);
+
+  /* Refined elevation — thin, luxurious */
+  --shadow-hairline: 0 0 0 1px oklch(0 0 0 / 0.04);
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.04), 0 1px 3px oklch(0 0 0 / 0.03);
+  --shadow-pop:  0 8px 24px -8px oklch(0.42 0.24 296 / 0.14), 0 2px 6px oklch(0 0 0 / 0.04);
 }
 
 .dark {

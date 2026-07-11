@@ -4,9 +4,10 @@ import { Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Downloa
 import { orders, customers, formatCurrency, salesSeries, paymentLabels, customerById, productById, relativeTime } from "@/lib/mock/data";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/app/pills";
+import { RequireAdmin } from "@/components/app/require-admin";
 
 export const Route = createFileRoute("/_app/finance")({
-  component: Finance,
+  component: () => (<RequireAdmin><Finance /></RequireAdmin>),
   head: () => ({ meta: [{ title: "المالية — Kodaty" }] }),
 });
 

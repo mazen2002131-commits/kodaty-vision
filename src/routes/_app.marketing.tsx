@@ -2,9 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Megaphone, Tag, Users2, TrendingUp, Copy, Check, Plus } from "lucide-react";
 import { formatEGP } from "@/lib/db";
+import { RequireAdmin } from "@/components/app/require-admin";
 
 export const Route = createFileRoute("/_app/marketing")({
-  component: Marketing,
+  component: () => (<RequireAdmin><Marketing /></RequireAdmin>),
   head: () => ({ meta: [{ title: "التسويق — Kodaty" }] }),
 });
 

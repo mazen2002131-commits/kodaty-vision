@@ -3,9 +3,10 @@ import { useMemo } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from "recharts";
 import { Download, FileSpreadsheet, TrendingUp, Users, ShoppingBag, KeyRound } from "lucide-react";
 import { useOrders, useCustomers, useLicenses, useSubscriptions, formatEGP } from "@/lib/db";
+import { RequireAdmin } from "@/components/app/require-admin";
 
 export const Route = createFileRoute("/_app/reports")({
-  component: Reports,
+  component: () => (<RequireAdmin><Reports /></RequireAdmin>),
   head: () => ({ meta: [{ title: "التقارير — Kodaty" }] }),
 });
 

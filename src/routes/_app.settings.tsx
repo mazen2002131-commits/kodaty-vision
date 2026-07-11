@@ -2,9 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Bell, Palette, Shield, Building, KeyRound, Save, Check } from "lucide-react";
+import { RequireAdmin } from "@/components/app/require-admin";
 
 export const Route = createFileRoute("/_app/settings")({
-  component: Settings,
+  component: () => (<RequireAdmin><Settings /></RequireAdmin>),
   head: () => ({ meta: [{ title: "الإعدادات — Kodaty" }] }),
 });
 

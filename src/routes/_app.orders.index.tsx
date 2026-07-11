@@ -248,3 +248,53 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </label>
   );
 }
+
+function OrderRow({ o, relative }: { o: ReturnType<typeof useOrders>["data"] extends (infer T)[] | undefined ? T : never; relative: (iso: string) => string }) {
+  const item = o.order_items?.[0];
+  const cName = o.customers?.name ?? "—";
+  const del = useDeleteOrder();
+  const [confirming, setConfirming] = useState(false);
+
+  async function handleDelete(e: React.MouseEvent) {
+    e.preventDefault(); e.stopPropagation();
+    if (!confirming) { setConfirming(true); setTimeout(() => setConfirming(false), 3000); return; }
+    try { await del.mutateAsync(o.id); toast.success("تم حذف الطلب"); }
+    catch (err) { toast.error("تعذّر الحذف", { description: (err as Error).message }); }
+  }
+
+  return (
+    <tr className="border-b border-border/60 last:border-0 hover:bg-accent/30">
+      <td className="px-4 py-3">
+        <Link to="/orders/$id" params={{ id: o.id }} className="num font-medium text-primary hover:underline">{o.code}</Link>
+      </td>
+      <td className="px-3 py-3">
+        <div className="flex items-center gap-2">
+          <Avatar name={cName} color={avatarColor(o.customer_id ?? cName)} size={24} />
+          <span className="truncate">{cName}</span>
+        </div>
+      </td>
+      <td className="px-3 py-3">{item?.product_name ?? "—"}</td>
+      <td className="px-3 py-3"><StatusPill status={o.status as OrderStatus} /></td>
+      <td className="px-3 py-3 num font-medium">{formatEGP(Number(o.total))}</td>
+      <td className="px-3 py-3"><PriorityBadge priority={o.priority as OrderPriority} /></td>
+      <td className="px-4 py-3 text-muted-foreground">{relative(o.created_at)}</td>
+      <td className="px-3 py-3 text-end">
+        <button
+          onClick={handleDelete}
+          disabled={del.isPending}
+          title={confirming ? "اضغط مجدداً للتأكيد" : "حذف"}
+          className={cn(
+            "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs transition",
+            confirming
+              ? "bg-destructive text-destructive-foreground"
+              : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive",
+          )}
+        >
+          {del.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+          {confirming && "تأكيد"}
+        </button>
+      </td>
+    </tr>
+  );
+}
+

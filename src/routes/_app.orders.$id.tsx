@@ -274,3 +274,36 @@ function OrderDetail() {
 
 const numInput = "w-24 rounded-md border border-border bg-surface-sunken px-2 py-1 text-sm num outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
 const selectInput = "w-full rounded-md border border-border bg-surface-sunken px-2 py-1.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
+
+function OrderKeys({ orderId }: { orderId: string }) {
+  const { data: keys = [] } = useOrderLicenses(orderId);
+  return (
+    <div className="surface-elevated p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <KeyRound className="h-4 w-4 text-primary" />
+        <div className="text-sm font-semibold">مفاتيح التفعيل</div>
+      </div>
+      {keys.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
+          لم يتم تسليم مفاتيح بعد. عند تحويل الطلب إلى «مُسلَّم» يتم ربط المفاتيح من الخزنة.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {keys.map(k => (
+            <div key={k.id} className="flex items-center gap-2 rounded-lg border border-primary/30 bg-brand-50/50 px-3 py-2.5">
+              <div className="flex-1 min-w-0">
+                <code className="num block select-all truncate text-sm tracking-wider">{k.key}</code>
+                {k.product_name && <div className="mt-0.5 text-[11px] text-muted-foreground">{k.product_name}</div>}
+              </div>
+              <button
+                onClick={() => { navigator.clipboard.writeText(k.key); toast.success("تم نسخ المفتاح"); }}
+                className="rounded-md border border-border bg-surface px-2 py-1 text-xs hover:bg-accent"
+              ><Copy className="me-1 inline h-3 w-3" /> نسخ</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+

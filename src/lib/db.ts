@@ -197,6 +197,59 @@ export function useUpdateOrderStatus() {
   });
 }
 
+export function useUpdateOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: { id: string; status?: OrderStatus; priority?: OrderPriority; payment_method?: string | null }) => {
+      const { error } = await supabase.from("orders").update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["order", v.id] });
+    },
+  });
+}
+
+export function useUpdateOrderItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, order_id, unit_price, qty, unit_cost }: { id: string; order_id: string; unit_price?: number; qty?: number; unit_cost?: number }) => {
+      const patch: { unit_price?: number; qty?: number; unit_cost?: number } = {};
+      if (unit_price !== undefined) patch.unit_price = unit_price;
+      if (qty !== undefined) patch.qty = qty;
+      if (unit_cost !== undefined) patch.unit_cost = unit_cost;
+      const { error } = await supabase.from("order_items").update(patch).eq("id", id);
+
+      if (error) throw error;
+      // recompute order total from all items
+      const { data: items, error: e2 } = await supabase.from("order_items").select("qty,unit_price").eq("order_id", order_id);
+      if (e2) throw e2;
+      const total = (items ?? []).reduce((s, it: any) => s + Number(it.unit_price) * Number(it.qty), 0);
+      const { error: e3 } = await supabase.from("orders").update({ total }).eq("id", order_id);
+      if (e3) throw e3;
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["order", v.order_id] });
+    },
+  });
+}
+
+export function useDeleteOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("order_items").delete().eq("order_id", id);
+      const { error } = await supabase.from("orders").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
 export function useCustomer(id: string) {
   return useQuery({
     queryKey: ["customer", id],

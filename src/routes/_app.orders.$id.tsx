@@ -1,17 +1,57 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Download, KeyRound, Copy } from "lucide-react";
-import { useOrder, avatarColor, formatEGP } from "@/lib/db";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { ArrowRight, Download, KeyRound, Copy, Trash2, Save, Loader2 } from "lucide-react";
+import {
+  useOrder, useUpdateOrder, useUpdateOrderItem, useDeleteOrder,
+  avatarColor, formatEGP,
+  type OrderStatus, type OrderPriority,
+} from "@/lib/db";
 import { StatusPill, Avatar, PriorityBadge } from "@/components/app/pills";
 import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_app/orders/$id")({
   component: OrderDetail,
   head: ({ params }) => ({ meta: [{ title: `طلب ${params.id.slice(0, 8)} — Kodaty` }] }),
 });
 
+const STATUSES: { v: OrderStatus; label: string }[] = [
+  { v: "pending", label: "معلّق" },
+  { v: "processing", label: "قيد التنفيذ" },
+  { v: "delivered", label: "مُسلَّم" },
+  { v: "cancelled", label: "ملغى" },
+  { v: "refunded", label: "مسترد" },
+];
+const PRIORITIES: { v: OrderPriority; label: string }[] = [
+  { v: "low", label: "منخفضة" },
+  { v: "normal", label: "عادية" },
+  { v: "high", label: "مرتفعة" },
+  { v: "urgent", label: "عاجلة" },
+];
+
 function OrderDetail() {
   const { id } = Route.useParams();
+  const navigate = useNavigate();
   const { data: o, isLoading } = useOrder(id);
+  const updateOrder = useUpdateOrder();
+  const updateItem = useUpdateOrderItem();
+  const removeOrder = useDeleteOrder();
+
+  const item = o?.order_items?.[0];
+  const [price, setPrice] = useState<string>("");
+  const [qty, setQty] = useState<string>("");
+  const [cost, setCost] = useState<string>("");
+
+  useEffect(() => {
+    if (item) {
+      setPrice(String(item.unit_price ?? ""));
+      setQty(String(item.qty ?? ""));
+      setCost(String(item.unit_cost ?? ""));
+    }
+  }, [item?.id, item?.unit_price, item?.qty, item?.unit_cost]);
 
   if (isLoading) return <div className="p-8 text-sm text-muted-foreground">جارِ التحميل…</div>;
   if (!o) {
@@ -23,10 +63,43 @@ function OrderDetail() {
     );
   }
 
-  const item = o.order_items?.[0];
   const c = o.customers;
   const total = Number(o.total ?? 0);
   const mockKey = `KDT-${o.code.replace(/[^0-9]/g, "").padStart(5, "0")}-${o.id.slice(0, 4).toUpperCase()}-DEMO`;
+
+  const dirty = item && (
+    Number(price) !== Number(item.unit_price) ||
+    Number(qty) !== Number(item.qty) ||
+    Number(cost) !== Number(item.unit_cost ?? 0)
+  );
+
+  async function saveItem() {
+    if (!item) return;
+    try {
+      await updateItem.mutateAsync({
+        id: item.id, order_id: o!.id,
+        unit_price: Number(price), qty: Math.max(1, Number(qty)), unit_cost: Number(cost || 0),
+      });
+      toast.success("تم حفظ التعديلات");
+    } catch (e) { toast.error("تعذّر الحفظ", { description: (e as Error).message }); }
+  }
+
+  async function changeStatus(status: OrderStatus) {
+    try { await updateOrder.mutateAsync({ id: o!.id, status }); toast.success("تم تحديث الحالة"); }
+    catch (e) { toast.error((e as Error).message); }
+  }
+  async function changePriority(priority: OrderPriority) {
+    try { await updateOrder.mutateAsync({ id: o!.id, priority }); toast.success("تم تحديث الأولوية"); }
+    catch (e) { toast.error((e as Error).message); }
+  }
+
+  async function doDelete() {
+    try {
+      await removeOrder.mutateAsync(o!.id);
+      toast.success("تم حذف الطلب");
+      navigate({ to: "/orders" });
+    } catch (e) { toast.error("تعذّر الحذف", { description: (e as Error).message }); }
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
@@ -50,14 +123,43 @@ function OrderDetail() {
         <div className="flex gap-2">
           <button className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-accent"><Download className="h-4 w-4" /> الفاتورة</button>
           <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-brand hover:opacity-90">إرسال المفتاح</button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button className="inline-flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10">
+                <Trash2 className="h-4 w-4" /> حذف
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>حذف الطلب {o.code}؟</AlertDialogTitle>
+                <AlertDialogDescription>لا يمكن التراجع عن هذا الإجراء. سيتم حذف الطلب وكل بنوده.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                <AlertDialogAction onClick={doDelete} className="bg-destructive text-destructive-foreground hover:opacity-90">حذف</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          {/* Items + totals */}
+          {/* Items + totals — editable */}
           <div className="surface-elevated p-5">
-            <div className="mb-3 text-sm font-semibold">تفاصيل الطلب</div>
+            <div className="mb-3 flex items-center justify-between">
+              <div className="text-sm font-semibold">تفاصيل الطلب</div>
+              {dirty && (
+                <button
+                  onClick={saveItem}
+                  disabled={updateItem.isPending}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground shadow-brand hover:opacity-90 disabled:opacity-60"
+                >
+                  {updateItem.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                  حفظ التعديلات
+                </button>
+              )}
+            </div>
             <div className="overflow-hidden rounded-lg border border-border">
               <table className="w-full text-sm">
                 <thead className="bg-surface-sunken/60 text-xs text-muted-foreground">
@@ -71,18 +173,34 @@ function OrderDetail() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(o.order_items ?? []).map(it => {
-                    const cost = Number(it.unit_cost ?? 0);
-                    const price = Number(it.unit_price);
-                    const profit = (price - cost) * it.qty;
+                  {item && (() => {
+                    const p = Number(price || 0);
+                    const q = Math.max(1, Number(qty || 1));
+                    const co = Number(cost || 0);
+                    const profit = (p - co) * q;
+                    return (
+                      <tr>
+                        <td className="px-3 py-3">{item.product_name}</td>
+                        <td className="px-3 py-3"><input type="number" min={1} value={qty} onChange={e => setQty(e.target.value)} className={numInput} /></td>
+                        <td className="px-3 py-3"><input type="number" min={0} value={cost} onChange={e => setCost(e.target.value)} className={numInput} /></td>
+                        <td className="px-3 py-3"><input type="number" min={0} value={price} onChange={e => setPrice(e.target.value)} className={numInput} /></td>
+                        <td className="px-3 py-3 num text-success">{formatEGP(profit)}</td>
+                        <td className="px-3 py-3 num font-medium">{formatEGP(p * q)}</td>
+                      </tr>
+                    );
+                  })()}
+                  {(o.order_items ?? []).slice(1).map(it => {
+                    const cst = Number(it.unit_cost ?? 0);
+                    const prc = Number(it.unit_price);
+                    const profit = (prc - cst) * it.qty;
                     return (
                       <tr key={it.id}>
                         <td className="px-3 py-3">{it.product_name}</td>
                         <td className="px-3 py-3 num">{it.qty}</td>
-                        <td className="px-3 py-3 num text-muted-foreground">{formatEGP(cost)}</td>
-                        <td className="px-3 py-3 num">{formatEGP(price)}</td>
+                        <td className="px-3 py-3 num text-muted-foreground">{formatEGP(cst)}</td>
+                        <td className="px-3 py-3 num">{formatEGP(prc)}</td>
                         <td className="px-3 py-3 num text-success">{formatEGP(profit)}</td>
-                        <td className="px-3 py-3 num font-medium">{formatEGP(price * it.qty)}</td>
+                        <td className="px-3 py-3 num font-medium">{formatEGP(prc * it.qty)}</td>
                       </tr>
                     );
                   })}
@@ -101,7 +219,6 @@ function OrderDetail() {
               );
             })()}
           </div>
-
 
           {/* Delivered key (placeholder) */}
           <div className="surface-elevated p-5">
@@ -140,18 +257,31 @@ function OrderDetail() {
             </div>
           )}
 
-          {/* Meta */}
+          {/* Editable meta */}
           <div className="surface-elevated p-5">
             <div className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">التفاصيل</div>
-            <dl className="space-y-2 text-xs">
-              <div className="flex justify-between"><dt className="text-muted-foreground">الحالة</dt><dd><StatusPill status={o.status} /></dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">الأولوية</dt><dd><PriorityBadge priority={o.priority} /></dd></div>
-              {o.payment_method && <div className="flex justify-between"><dt className="text-muted-foreground">الدفع</dt><dd>{o.payment_method}</dd></div>}
-              <div className="flex justify-between"><dt className="text-muted-foreground">أُنشئ</dt><dd>{new Date(o.created_at).toLocaleString("ar-EG")}</dd></div>
-            </dl>
+            <div className="space-y-3 text-xs">
+              <label className="block space-y-1">
+                <span className="text-muted-foreground">الحالة</span>
+                <select value={o.status} onChange={e => changeStatus(e.target.value as OrderStatus)} className={selectInput}>
+                  {STATUSES.map(s => <option key={s.v} value={s.v}>{s.label}</option>)}
+                </select>
+              </label>
+              <label className="block space-y-1">
+                <span className="text-muted-foreground">الأولوية</span>
+                <select value={o.priority} onChange={e => changePriority(e.target.value as OrderPriority)} className={selectInput}>
+                  {PRIORITIES.map(p => <option key={p.v} value={p.v}>{p.label}</option>)}
+                </select>
+              </label>
+              {o.payment_method && <div className="flex justify-between"><span className="text-muted-foreground">الدفع</span><span>{o.payment_method}</span></div>}
+              <div className="flex justify-between"><span className="text-muted-foreground">أُنشئ</span><span>{new Date(o.created_at).toLocaleString("ar-EG")}</span></div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+const numInput = "w-24 rounded-md border border-border bg-surface-sunken px-2 py-1 text-sm num outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
+const selectInput = "w-full rounded-md border border-border bg-surface-sunken px-2 py-1.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";

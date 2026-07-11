@@ -73,16 +73,17 @@ function Dashboard() {
             <p className="mt-1 text-sm text-muted-foreground">لمحة شاملة عن أداء مبيعاتك اليوم.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-brand transition hover:opacity-90">
+            <Link to="/orders" className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-brand transition hover:opacity-90">
               <Plus className="h-4 w-4" /> طلب جديد
-            </button>
-            <button className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium transition hover:bg-accent">
+            </Link>
+            <Link to="/licenses" className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium transition hover:bg-accent">
               <KeyRound className="h-4 w-4" /> إضافة مفتاح
-            </button>
-            <button className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium transition hover:bg-accent">
+            </Link>
+            <Link to="/automation" className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium transition hover:bg-accent">
               <Zap className="h-4 w-4" /> أتمتة
-            </button>
+            </Link>
           </div>
+
         </div>
       </div>
 

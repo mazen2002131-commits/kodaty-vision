@@ -357,6 +357,7 @@ function NewInvoiceDialog() {
         product_id: product.id,
         product_name: product.name,
         unit_price: Number(product.price),
+        unit_cost: Number((product as any).cost_price ?? 0),
         qty: form.qty,
         priority: form.priority,
         status: form.status,

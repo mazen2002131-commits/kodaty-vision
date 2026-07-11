@@ -111,33 +111,14 @@ function OrdersList() {
                   <th className="px-3 py-2.5 text-start font-medium">المبلغ</th>
                   <th className="px-3 py-2.5 text-start font-medium">الأولوية</th>
                   <th className="px-4 py-2.5 text-start font-medium">التاريخ</th>
+                  <th className="px-3 py-2.5 text-end font-medium"></th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(o => {
-                  const item = o.order_items?.[0];
-                  const cName = o.customers?.name ?? "—";
-                  return (
-                    <tr key={o.id} className="border-b border-border/60 last:border-0 hover:bg-accent/30">
-                      <td className="px-4 py-3">
-                        <Link to="/orders/$id" params={{ id: o.id }} className="num font-medium text-primary hover:underline">
-                          {o.code}
-                        </Link>
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="flex items-center gap-2">
-                          <Avatar name={cName} color={avatarColor(o.customer_id ?? cName)} size={24} />
-                          <span className="truncate">{cName}</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-3">{item?.product_name ?? "—"}</td>
-                      <td className="px-3 py-3"><StatusPill status={o.status as OrderStatus} /></td>
-                      <td className="px-3 py-3 num font-medium">{formatEGP(Number(o.total))}</td>
-                      <td className="px-3 py-3"><PriorityBadge priority={o.priority as OrderPriority} /></td>
-                      <td className="px-4 py-3 text-muted-foreground">{relative(o.created_at)}</td>
-                    </tr>
-                  );
-                })}
+                {filtered.map(o => (
+                  <OrderRow key={o.id} o={o} relative={relative} />
+                ))}
+
               </tbody>
             </table>
           </div>

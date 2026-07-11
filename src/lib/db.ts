@@ -347,16 +347,18 @@ export function useCreateTicket() {
 export function useCreateProduct() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; category?: string; price: number }) => {
+    mutationFn: async (input: { name: string; category?: string; price: number; cost_price?: number }) => {
       const { error } = await supabase.from("products").insert({
         name: input.name,
         category: input.category ?? null,
         price: input.price,
+        cost_price: input.cost_price ?? 0,
         currency: "EGP",
         active: true,
       });
       if (error) throw error;
     },
+
     onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
   });
 }

@@ -1,3 +1,4 @@
+const NOW = 1783036800000; // fixed epoch for deterministic SSR (2026-07-11)
 // Mock domain data for Kodaty. Realistic Arabic + product names.
 
 export type OrderStatus = "new" | "processing" | "completed" | "pending" | "refunded" | "cancelled";
@@ -95,7 +96,7 @@ export const customers: Customer[] = names.map((n, i) => ({
   email: `user${i + 1}@kodaty.io`,
   whatsapp: `+9665${(10000000 + i * 1234567).toString().slice(0, 8)}`,
   country: countries[i % countries.length],
-  joinedAt: new Date(Date.now() - (i * 7 + 3) * 86400000).toISOString(),
+  joinedAt: new Date(NOW - (i * 7 + 3) * 86400000).toISOString(),
   totalSpent: 800 + ((i * 733) % 12000),
   ordersCount: 1 + (i % 12),
   tags: i % 3 === 0 ? ["VIP"] : i % 4 === 0 ? ["جديد"] : ["نشط"],
@@ -121,20 +122,20 @@ export const orders: Order[] = Array.from({ length: 48 }, (_, i) => {
     status: statuses[i % statuses.length],
     priority: priorities[i % priorities.length],
     payment: payments[i % payments.length],
-    createdAt: new Date(Date.now() - i * 3600_000 * 5).toISOString(),
+    createdAt: new Date(NOW - i * 3600_000 * 5).toISOString(),
     notes: i % 5 === 0 ? "تم إرسال المفتاح عبر واتساب." : undefined,
     tags: i % 4 === 0 ? ["عاجل"] : i % 3 === 0 ? ["تجديد"] : [],
     timeline: [
-      { at: new Date(Date.now() - i * 3600_000 * 5).toISOString(), by: "النظام", text: "تم إنشاء الطلب" },
-      { at: new Date(Date.now() - i * 3600_000 * 4).toISOString(), by: "منال · فريق المبيعات", text: "تم تأكيد الدفع" },
-      { at: new Date(Date.now() - i * 3600_000 * 3).toISOString(), by: "الأتمتة", text: "تم إرسال المفتاح للعميل" },
+      { at: new Date(NOW - i * 3600_000 * 5).toISOString(), by: "النظام", text: "تم إنشاء الطلب" },
+      { at: new Date(NOW - i * 3600_000 * 4).toISOString(), by: "منال · فريق المبيعات", text: "تم تأكيد الدفع" },
+      { at: new Date(NOW - i * 3600_000 * 3).toISOString(), by: "الأتمتة", text: "تم إرسال المفتاح للعميل" },
     ],
   };
 });
 
 export const subscriptions: Subscription[] = customers.slice(0, 12).map((c, i) => {
   const daysLeft = [3, 12, 45, 1, 90, 7, -4, 22, 60, 30, 14, 120][i];
-  const end = new Date(Date.now() + daysLeft * 86400_000);
+  const end = new Date(NOW + daysLeft * 86400_000);
   return {
     id: `s${i + 1}`,
     customerId: c.id,
@@ -196,7 +197,7 @@ export function formatNumber(n: number) {
 }
 
 export function relativeTime(iso: string) {
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  const diff = (NOW - new Date(iso).getTime()) / 1000;
   if (diff < 60) return "الآن";
   if (diff < 3600) return `منذ ${Math.floor(diff / 60)} د`;
   if (diff < 86400) return `منذ ${Math.floor(diff / 3600)} س`;
@@ -204,7 +205,7 @@ export function relativeTime(iso: string) {
 }
 
 export function daysUntil(iso: string) {
-  return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400_000);
+  return Math.ceil((new Date(iso).getTime() - NOW) / 86400_000);
 }
 
 export function customerById(id: string) { return customers.find(c => c.id === id)!; }
@@ -224,9 +225,9 @@ export const priorityLabels: Record<Priority, string> = {
 };
 
 export const notifications = [
-  { id: "n1", type: "order", title: "طلب جديد #KD-10295", body: "أحمد العتيبي · Adobe Creative Cloud", at: new Date(Date.now() - 120_000).toISOString() },
-  { id: "n2", type: "sub", title: "اشتراك سينتهي قريباً", body: "منى القحطاني · Microsoft 365 · بعد 3 أيام", at: new Date(Date.now() - 20 * 60_000).toISOString() },
-  { id: "n3", type: "stock", title: "المخزون منخفض", body: "AutoCAD 2026 · تبقى 4 مفاتيح", at: new Date(Date.now() - 3600_000).toISOString() },
-  { id: "n4", type: "payment", title: "فشل عملية دفع", body: "خالد النعيمي · فودافون كاش · 950 ر.س", at: new Date(Date.now() - 5 * 3600_000).toISOString() },
-  { id: "n5", type: "task", title: "مهمة جديدة", body: "متابعة تجديد اشتراك سارة المطيري", at: new Date(Date.now() - 8 * 3600_000).toISOString() },
+  { id: "n1", type: "order", title: "طلب جديد #KD-10295", body: "أحمد العتيبي · Adobe Creative Cloud", at: new Date(NOW - 120_000).toISOString() },
+  { id: "n2", type: "sub", title: "اشتراك سينتهي قريباً", body: "منى القحطاني · Microsoft 365 · بعد 3 أيام", at: new Date(NOW - 20 * 60_000).toISOString() },
+  { id: "n3", type: "stock", title: "المخزون منخفض", body: "AutoCAD 2026 · تبقى 4 مفاتيح", at: new Date(NOW - 3600_000).toISOString() },
+  { id: "n4", type: "payment", title: "فشل عملية دفع", body: "خالد النعيمي · فودافون كاش · 950 ر.س", at: new Date(NOW - 5 * 3600_000).toISOString() },
+  { id: "n5", type: "task", title: "مهمة جديدة", body: "متابعة تجديد اشتراك سارة المطيري", at: new Date(NOW - 8 * 3600_000).toISOString() },
 ];

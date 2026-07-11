@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useRole } from "@/lib/roles";
 import type { PermissionKey } from "@/lib/permissions";
+import kodatyLogo from "@/assets/kodaty-logo.png.asset.json";
 
 type NavItem = { to: string; label: string; icon: any; badge?: number; perm: PermissionKey; adminOnly?: boolean };
 
@@ -59,8 +60,8 @@ export function AppSidebar() {
       <div className="sticky top-0 flex h-dvh flex-col">
         {/* Brand */}
         <div className="flex items-center gap-2.5 px-4 pt-5 pb-5">
-          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl brand-gradient shadow-sm">
-            <span className="font-display text-[15px] font-bold text-white">K</span>
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white">
+            <img src={kodatyLogo.url} alt="Kodaty" className="h-7 w-7 object-contain" />
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">

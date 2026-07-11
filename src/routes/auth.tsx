@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Loader2 } from "lucide-react";
+import kodatyLogo from "@/assets/kodaty-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -63,7 +64,7 @@ function AuthPage() {
       <div className="relative hidden overflow-hidden brand-gradient p-12 text-white lg:flex lg:flex-col lg:justify-between">
         <div>
           <div className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-            <span className="grid size-10 place-items-center rounded-xl bg-white/15 backdrop-blur">K</span>
+            <span className="grid size-10 place-items-center rounded-xl bg-white p-1.5"><img src={kodatyLogo.url} alt="Kodaty" className="h-full w-full object-contain" /></span>
             Kodaty
           </div>
           <p className="mt-16 max-w-md text-3xl font-semibold leading-snug">
@@ -81,7 +82,7 @@ function AuthPage() {
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden">
             <div className="flex items-center gap-2 text-lg font-semibold">
-              <span className="grid size-8 place-items-center rounded-lg brand-gradient text-white">K</span>
+              <span className="grid size-8 place-items-center rounded-lg bg-white p-1 ring-1 ring-border"><img src={kodatyLogo.url} alt="Kodaty" className="h-full w-full object-contain" /></span>
               Kodaty
             </div>
           </div>

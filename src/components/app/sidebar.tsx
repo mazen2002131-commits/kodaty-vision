@@ -34,6 +34,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
     { to: "/tasks", label: "المهام", icon: CheckSquare },
     { to: "/automation", label: "الأتمتة", icon: Zap, adminOnly: true },
     { to: "/notifications", label: "الإشعارات", icon: Bell },
+    { to: "/team", label: "الفريق والصلاحيات", icon: ShieldCheck, adminOnly: true },
     { to: "/settings", label: "الإعدادات", icon: Settings, adminOnly: true },
   ]},
 ];

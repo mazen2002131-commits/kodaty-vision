@@ -19,7 +19,7 @@ function Products() {
   const { data: products = [], isLoading } = useProducts();
   const create = useCreateProduct();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", category: "", price: "", cost_price: "" });
+  const [form, setForm] = useState({ name: "", category: "", price: "", cost_price: "", billing_type: "one_time" as "one_time"|"monthly"|"yearly" });
 
   async function submit() {
     if (!form.name || !form.price) { toast.error("املأ الاسم والسعر"); return; }
@@ -29,12 +29,14 @@ function Products() {
         category: form.category || undefined,
         price: Number(form.price),
         cost_price: form.cost_price ? Number(form.cost_price) : 0,
+        billing_type: form.billing_type,
       });
       toast.success("تمت الإضافة");
       setOpen(false);
-      setForm({ name: "", category: "", price: "", cost_price: "" });
+      setForm({ name: "", category: "", price: "", cost_price: "", billing_type: "one_time" });
     } catch (e: any) { toast.error(e.message ?? "فشل"); }
   }
+
 
 
   const grouped = products.reduce<Record<string, typeof products>>((acc, p) => {

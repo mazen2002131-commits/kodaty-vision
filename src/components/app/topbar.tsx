@@ -47,41 +47,44 @@ export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
 
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur-xl">
       <div className="flex h-14 items-center gap-3 px-6">
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 text-[13px]">
           <span className="text-muted-foreground">Kodaty</span>
           <span className="text-muted-foreground/40">/</span>
-          <span className="font-medium">{crumb}</span>
+          <span className="font-medium text-foreground">{crumb}</span>
         </div>
 
-        <div className="ms-auto flex items-center gap-2">
+        <div className="ms-auto flex items-center gap-1.5">
           <button
             onClick={onOpenPalette}
-            className="group hidden items-center gap-2 rounded-lg border border-border bg-surface-sunken px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground md:flex md:w-80"
+            className="group hidden items-center gap-2 rounded-lg border border-border/80 bg-surface px-3 py-1.5 text-[13px] text-muted-foreground transition-all hover:border-border-strong hover:shadow-sm md:flex md:w-80"
           >
-            <Search className="h-4 w-4" />
+            <Search className="h-3.5 w-3.5" />
             <span className="flex-1 text-start">ابحث في كل شيء…</span>
-            <kbd className="rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+            <kbd className="rounded border border-border bg-surface-sunken px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
               ⌘ K
             </kbd>
           </button>
 
           <button
             onClick={onOpenPalette}
-            className="md:hidden rounded-lg border border-border bg-surface-sunken p-2 text-muted-foreground"
+            className="md:hidden rounded-lg border border-border p-2 text-muted-foreground"
             aria-label="بحث"
           >
             <Search className="h-4 w-4" />
           </button>
 
-          <button className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-brand transition hover:opacity-90">
-            <Plus className="h-4 w-4" /> <span className="hidden sm:inline">طلب جديد</span>
+          <button
+            onClick={() => navigate({ to: "/orders", search: { new: 1 } as never })}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground shadow-sm transition hover:opacity-95"
+          >
+            <Plus className="h-3.5 w-3.5" /> <span className="hidden sm:inline">طلب جديد</span>
           </button>
 
           <button
             onClick={toggle}
-            className="rounded-lg border border-border bg-surface-sunken p-2 text-muted-foreground transition hover:text-foreground"
+            className="rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground"
             aria-label="تبديل الوضع الليلي"
             title="تبديل الوضع (⌘\\)"
           >
@@ -90,7 +93,7 @@ export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
 
           <button
             onClick={onOpenShortcuts}
-            className="hidden rounded-lg border border-border bg-surface-sunken p-2 text-muted-foreground transition hover:text-foreground sm:inline-flex"
+            className="hidden rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground sm:inline-flex"
             aria-label="اختصارات لوحة المفاتيح"
             title="اختصارات (?)"
           >
@@ -98,9 +101,9 @@ export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
           </button>
 
           <DropdownMenu>
-            <DropdownMenuTrigger className="relative rounded-lg border border-border bg-surface-sunken p-2 text-muted-foreground transition hover:text-foreground">
+            <DropdownMenuTrigger className="relative rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground">
               <Bell className="h-4 w-4" />
-              <span className="absolute end-1.5 top-1.5 h-2 w-2 rounded-full bg-primary ring-2 ring-background" />
+              <span className="absolute end-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-primary ring-2 ring-background" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-96 p-0">
               <div className="flex items-center justify-between border-b border-border p-3">
@@ -125,17 +128,16 @@ export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
           </DropdownMenu>
 
           <DropdownMenu>
-            <DropdownMenuTrigger className="ms-1 flex items-center gap-2 rounded-lg border border-border bg-surface-sunken py-1 ps-2 pe-1 transition hover:border-border-strong">
+            <DropdownMenuTrigger className="ms-1 flex items-center gap-2 rounded-lg py-1 ps-2 pe-1 transition hover:bg-accent">
               <div className="text-end">
-                <div className="text-xs font-medium leading-tight">{profile.name}</div>
+                <div className="text-[12px] font-medium leading-tight">{profile.name}</div>
                 <div className="flex items-center justify-end gap-1 text-[10px] leading-tight text-muted-foreground">
                   {role && (
-                    <span className={`inline-flex items-center gap-0.5 rounded px-1 py-px text-[9px] font-semibold ${isAdmin ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+                    <span className={`inline-flex items-center gap-0.5 rounded px-1 py-px text-[9px] font-semibold ${isAdmin ? "bg-primary/12 text-primary" : "bg-muted text-muted-foreground"}`}>
                       <Shield className="h-2.5 w-2.5" />
                       {isAdmin ? "مدير" : "موظف"}
                     </span>
                   )}
-                  مساحة العمل
                 </div>
               </div>
               <div className="grid h-7 w-7 place-items-center rounded-md brand-gradient text-xs font-semibold text-white">

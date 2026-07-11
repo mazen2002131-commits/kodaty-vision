@@ -14,48 +14,18 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
 export const listTeam = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as any);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data: users, error } = await supabaseAdmin.auth.admin.listUsers({
-      page: 1,
-      perPage: 200,
-    });
+    const { data, error } = await context.supabase.rpc("admin_list_team");
     if (error) throw new Error(error.message);
-
-    const ids = users.users.map((u) => u.id);
-    const [{ data: roles }, { data: profiles }] = await Promise.all([
-      supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids),
-      supabaseAdmin.from("profiles").select("id, full_name, avatar_url").in("id", ids),
-    ]);
-
-    const roleMap = new Map<string, string[]>();
-    (roles ?? []).forEach((r: any) => {
-      const list = roleMap.get(r.user_id) ?? [];
-      list.push(r.role);
-      roleMap.set(r.user_id, list);
-    });
-    const profileMap = new Map<string, any>();
-    (profiles ?? []).forEach((p: any) => profileMap.set(p.id, p));
-
-    return users.users.map((u) => {
-      const rs = roleMap.get(u.id) ?? [];
-      const primary: "admin" | "staff" | null = rs.includes("admin")
-        ? "admin"
-        : rs.includes("staff")
-          ? "staff"
-          : null;
-      return {
-        id: u.id,
-        email: u.email ?? "",
-        created_at: u.created_at,
-        last_sign_in_at: u.last_sign_in_at ?? null,
-        confirmed: !!u.email_confirmed_at,
-        full_name: profileMap.get(u.id)?.full_name ?? null,
-        avatar_url: profileMap.get(u.id)?.avatar_url ?? null,
-        role: primary,
-      };
-    });
+    return (data ?? []) as Array<{
+      id: string;
+      email: string;
+      created_at: string;
+      last_sign_in_at: string | null;
+      confirmed: boolean;
+      full_name: string | null;
+      avatar_url: string | null;
+      role: "admin" | "staff" | null;
+    }>;
   });
 
 const createSchema = z.object({
@@ -104,12 +74,10 @@ export const updateTeamRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => updateRoleSchema.parse(data))
   .handler(async ({ context, data }) => {
-    await assertAdmin(context as any);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("user_roles").delete().eq("user_id", data.user_id);
-    const { error } = await supabaseAdmin
-      .from("user_roles")
-      .insert({ user_id: data.user_id, role: data.role });
+    const { error } = await context.supabase.rpc("admin_set_role", {
+      _user_id: data.user_id,
+      _role: data.role,
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

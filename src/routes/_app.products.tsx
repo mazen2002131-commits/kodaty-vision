@@ -89,23 +89,33 @@ function Products() {
         <section key={cat} className="space-y-2">
           <h2 className="text-sm font-semibold text-muted-foreground">{cat}</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map(p => (
-              <div key={p.id} className="surface-elevated group flex items-start justify-between gap-3 p-4 transition hover:border-primary/40">
-                <div className="flex items-start gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-lg brand-gradient-soft text-primary">
-                    <Package className="h-5 w-5" />
+            {items.map(p => {
+              const margin = Number(p.price) - Number(p.cost_price ?? 0);
+              const pct = Number(p.price) > 0 ? Math.round((margin / Number(p.price)) * 100) : 0;
+              return (
+                <div key={p.id} className="surface-elevated group flex items-start justify-between gap-3 p-4 transition hover:border-primary/40">
+                  <div className="flex items-start gap-3">
+                    <div className="grid h-10 w-10 place-items-center rounded-lg brand-gradient-soft text-primary">
+                      <Package className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-medium leading-tight">{p.name}</div>
+                      <div className="text-xs text-muted-foreground">{p.category ?? "—"}</div>
+                      {Number(p.cost_price ?? 0) > 0 && (
+                        <div className="mt-1 text-[11px] text-muted-foreground">
+                          تكلفة: <span className="num">{formatEGP(Number(p.cost_price))}</span> · ربح: <span className="num text-success">{formatEGP(margin)} ({pct}%)</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-medium leading-tight">{p.name}</div>
-                    <div className="text-xs text-muted-foreground">{p.category ?? "—"}</div>
-                  </div>
+                  <div className="num text-lg font-semibold text-primary">{formatEGP(Number(p.price))}</div>
                 </div>
-                <div className="num text-lg font-semibold text-primary">{formatEGP(Number(p.price))}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       ))}
     </div>
   );
 }
+

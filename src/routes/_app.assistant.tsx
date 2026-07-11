@@ -52,7 +52,7 @@ function Assistant() {
         <div className="relative overflow-hidden border-b border-border">
           <div className="pointer-events-none absolute inset-0 mesh-bg opacity-70" />
           <div className="relative flex items-center gap-3 p-5">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--gradient-brand)] shadow-brand">
+            <div className="grid h-11 w-11 place-items-center rounded-2xl brand-gradient shadow-brand">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1">
@@ -73,7 +73,7 @@ function Assistant() {
               <div className={cn(
                 "grid h-8 w-8 shrink-0 place-items-center rounded-lg",
                 m.role === "assistant"
-                  ? "bg-[var(--gradient-brand)] text-white shadow-brand"
+                  ? "brand-gradient text-white shadow-brand"
                   : "bg-surface-sunken text-foreground",
               )}>
                 {m.role === "assistant" ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
@@ -94,7 +94,7 @@ function Assistant() {
           ))}
           {loading && (
             <div className="flex gap-3">
-              <div className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--gradient-brand)] text-white shadow-brand">
+              <div className="grid h-8 w-8 place-items-center rounded-lg brand-gradient text-white shadow-brand">
                 <Bot className="h-4 w-4" />
               </div>
               <div className="rounded-2xl rounded-ss-sm bg-surface-sunken px-4 py-3">

@@ -38,7 +38,7 @@ function Licenses() {
         <div className="pointer-events-none absolute inset-0 mesh-bg opacity-70" />
         <div className="relative flex flex-wrap items-center justify-between gap-4 p-6">
           <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--gradient-brand)] shadow-brand">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl brand-gradient shadow-brand">
               <Shield className="h-6 w-6 text-white" />
             </div>
             <div>

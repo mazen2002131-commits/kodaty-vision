@@ -6,7 +6,7 @@ export function Placeholder({ title, description }: { title: string; description
       <div className="surface-elevated relative overflow-hidden p-10 text-center">
         <div className="pointer-events-none absolute inset-0 mesh-bg opacity-50" />
         <div className="relative">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[var(--gradient-brand)] shadow-brand">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl brand-gradient shadow-brand">
             <Construction className="h-6 w-6 text-white" />
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight">{title}</h1>

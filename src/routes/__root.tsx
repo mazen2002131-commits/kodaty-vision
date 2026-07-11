@@ -17,7 +17,7 @@ function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <div className="mx-auto mb-6 h-16 w-16 rounded-2xl bg-[var(--gradient-brand)] shadow-brand" />
+        <div className="mx-auto mb-6 h-16 w-16 rounded-2xl brand-gradient shadow-brand" />
         <h1 className="text-6xl font-bold brand-gradient-text">404</h1>
         <h2 className="mt-4 text-xl font-semibold">الصفحة غير موجودة</h2>
         <p className="mt-2 text-sm text-muted-foreground">

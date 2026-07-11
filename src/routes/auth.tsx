@@ -75,7 +75,7 @@ function AuthPage() {
   return (
     <div dir="rtl" className="grid min-h-dvh grid-cols-1 lg:grid-cols-2 bg-surface-sunken">
       {/* Brand side */}
-      <div className="relative hidden overflow-hidden bg-[var(--gradient-brand)] p-12 text-white lg:flex lg:flex-col lg:justify-between">
+      <div className="relative hidden overflow-hidden brand-gradient p-12 text-white lg:flex lg:flex-col lg:justify-between">
         <div>
           <div className="flex items-center gap-2 text-xl font-semibold tracking-tight">
             <span className="grid size-10 place-items-center rounded-xl bg-white/15 backdrop-blur">K</span>
@@ -96,7 +96,7 @@ function AuthPage() {
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden">
             <div className="flex items-center gap-2 text-lg font-semibold">
-              <span className="grid size-8 place-items-center rounded-lg bg-[var(--gradient-brand)] text-white">K</span>
+              <span className="grid size-8 place-items-center rounded-lg brand-gradient text-white">K</span>
               Kodaty
             </div>
           </div>
@@ -149,7 +149,7 @@ function AuthPage() {
 
             <button
               type="submit" disabled={busy}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--gradient-brand)] px-4 py-2.5 text-sm font-semibold text-white shadow-brand transition hover:opacity-95 disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-lg brand-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-brand transition hover:opacity-95 disabled:opacity-60"
             >
               {busy && <Loader2 className="size-4 animate-spin" />}
               {mode === "signin" ? "تسجيل الدخول" : "إنشاء الحساب"}

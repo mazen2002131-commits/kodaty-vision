@@ -11,22 +11,10 @@ type Task = { id: string; title: string; assignee: string; priority: "low" | "no
 type ColumnId = "todo" | "doing" | "review" | "done";
 
 const initial: Record<ColumnId, Task[]> = {
-  todo: [
-    { id: "1", title: "متابعة طلبات Adobe المعلقة", assignee: "أحمد", priority: "high" },
-    { id: "2", title: "تحديث أسعار Office 365", assignee: "سارة", priority: "normal" },
-    { id: "3", title: "استيراد 200 مفتاح Windows 11", assignee: "محمد", priority: "normal" },
-  ],
-  doing: [
-    { id: "4", title: "تصميم صفحة الهبوط الجديدة", assignee: "منى", priority: "high" },
-    { id: "5", title: "معالجة استرداد #KD-10023", assignee: "أحمد", priority: "normal" },
-  ],
-  review: [
-    { id: "6", title: "مراجعة تذاكر الدعم المفتوحة", assignee: "سارة", priority: "low" },
-  ],
-  done: [
-    { id: "7", title: "إعداد حملة رمضان", assignee: "منى", priority: "normal" },
-    { id: "8", title: "تسوية حساب InstaPay", assignee: "محمد", priority: "high" },
-  ],
+  todo: [],
+  doing: [],
+  review: [],
+  done: [],
 };
 
 const columns: { id: ColumnId; label: string; tone: string }[] = [

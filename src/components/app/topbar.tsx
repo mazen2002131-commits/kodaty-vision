@@ -102,15 +102,30 @@ export function Topbar({ onOpenPalette }: TopbarProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="ms-1 flex items-center gap-2 rounded-lg border border-border bg-surface-sunken py-1 ps-2 pe-1">
-            <div className="text-end">
-              <div className="text-xs font-medium leading-tight">منال العتيبي</div>
-              <div className="text-[10px] leading-tight text-muted-foreground">مدير المبيعات</div>
-            </div>
-            <div className="grid h-7 w-7 place-items-center rounded-md bg-[var(--gradient-brand)] text-xs font-semibold text-white">
-              م
-            </div>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="ms-1 flex items-center gap-2 rounded-lg border border-border bg-surface-sunken py-1 ps-2 pe-1 transition hover:border-border-strong">
+              <div className="text-end">
+                <div className="text-xs font-medium leading-tight">{profile.name}</div>
+                <div className="text-[10px] leading-tight text-muted-foreground">مساحة العمل</div>
+              </div>
+              <div className="grid h-7 w-7 place-items-center rounded-md bg-[var(--gradient-brand)] text-xs font-semibold text-white">
+                {profile.initial}
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="font-normal">
+                <div className="text-sm font-medium">{profile.name}</div>
+                <div className="truncate text-xs text-muted-foreground" dir="ltr">{profile.email}</div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate({ to: "/settings" })}>
+                <UserIcon className="me-2 h-4 w-4" /> الإعدادات
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={signOut} className="text-red-600 focus:text-red-600">
+                <LogOut className="me-2 h-4 w-4" /> تسجيل الخروج
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

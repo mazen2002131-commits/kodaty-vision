@@ -215,11 +215,12 @@ export function useUpdateOrderItem() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, order_id, unit_price, qty, unit_cost }: { id: string; order_id: string; unit_price?: number; qty?: number; unit_cost?: number }) => {
-      const patch: Record<string, unknown> = {};
+      const patch: { unit_price?: number; qty?: number; unit_cost?: number } = {};
       if (unit_price !== undefined) patch.unit_price = unit_price;
       if (qty !== undefined) patch.qty = qty;
       if (unit_cost !== undefined) patch.unit_cost = unit_cost;
       const { error } = await supabase.from("order_items").update(patch).eq("id", id);
+
       if (error) throw error;
       // recompute order total from all items
       const { data: items, error: e2 } = await supabase.from("order_items").select("qty,unit_price").eq("order_id", order_id);

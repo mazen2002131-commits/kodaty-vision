@@ -221,21 +221,9 @@ function OrderDetail() {
             })()}
           </div>
 
-          {/* Delivered key (placeholder) */}
-          <div className="surface-elevated p-5">
-            <div className="mb-3 flex items-center gap-2">
-              <KeyRound className="h-4 w-4 text-primary" />
-              <div className="text-sm font-semibold">مفتاح التفعيل</div>
-            </div>
-            <div className="flex items-center gap-2 rounded-lg border border-dashed border-primary/40 bg-brand-50/60 px-3 py-2.5">
-              <code className="num flex-1 select-all text-sm tracking-wider">{mockKey}</code>
-              <button
-                onClick={() => { navigator.clipboard.writeText(mockKey); toast.success("تم نسخ المفتاح"); }}
-                className="rounded-md border border-border bg-surface px-2 py-1 text-xs hover:bg-accent"
-              ><Copy className="me-1 inline h-3 w-3" /> نسخ</button>
-            </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">سيُستبدل بالمفتاح الفعلي من الخزنة عند التسليم.</p>
-          </div>
+          {/* Delivered keys from Vault */}
+          <OrderKeys orderId={o.id} />
+
         </div>
 
         <div className="space-y-4">

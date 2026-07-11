@@ -279,20 +279,30 @@ function OrderRow({ o, relative }: { o: ReturnType<typeof useOrders>["data"] ext
       <td className="px-3 py-3"><PriorityBadge priority={o.priority as OrderPriority} /></td>
       <td className="px-4 py-3 text-muted-foreground">{relative(o.created_at)}</td>
       <td className="px-3 py-3 text-end">
-        <button
-          onClick={handleDelete}
-          disabled={del.isPending}
-          title={confirming ? "اضغط مجدداً للتأكيد" : "حذف"}
-          className={cn(
-            "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs transition",
-            confirming
-              ? "bg-destructive text-destructive-foreground"
-              : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive",
-          )}
-        >
-          {del.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-          {confirming && "تأكيد"}
-        </button>
+        <div className="inline-flex items-center gap-1">
+          <Link
+            to="/orders/$id"
+            params={{ id: o.id }}
+            title="تعديل"
+            className="inline-flex items-center rounded-md px-2 py-1 text-xs text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:bg-primary/10 hover:text-primary"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Link>
+          <button
+            onClick={handleDelete}
+            disabled={del.isPending}
+            title={confirming ? "اضغط مجدداً للتأكيد" : "حذف"}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs transition",
+              confirming
+                ? "bg-destructive text-destructive-foreground"
+                : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive",
+            )}
+          >
+            {del.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+            {confirming && "تأكيد"}
+          </button>
+        </div>
       </td>
     </tr>
   );

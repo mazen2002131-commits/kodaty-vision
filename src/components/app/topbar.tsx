@@ -1,8 +1,11 @@
-import { Bell, Search, Plus, Command as CmdIcon } from "lucide-react";
-import { useRouterState } from "@tanstack/react-router";
+import { Bell, Search, Plus, LogOut, User as UserIcon } from "lucide-react";
+import { useRouterState, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { notifications, relativeTime } from "@/lib/mock/data";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuTrigger,
+  DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
 interface TopbarProps { onOpenPalette: () => void }

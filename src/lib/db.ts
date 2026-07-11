@@ -36,7 +36,7 @@ export type Order = {
   tags: string[];
   created_at: string;
   customers?: Pick<Customer, "id" | "name" | "email"> | null;
-  order_items?: { id: string; product_name: string; qty: number; unit_price: number }[];
+  order_items?: { id: string; product_name: string; qty: number; unit_price: number; unit_cost?: number }[];
 };
 
 // ---------- Customers ----------

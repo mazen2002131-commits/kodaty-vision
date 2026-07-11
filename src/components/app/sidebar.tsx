@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useRole } from "@/lib/roles";
 import type { PermissionKey } from "@/lib/permissions";
+import kodatyLogo from "@/assets/kodaty-logo.png.asset.json";
 
 type NavItem = { to: string; label: string; icon: any; badge?: number; perm: PermissionKey; adminOnly?: boolean };
 

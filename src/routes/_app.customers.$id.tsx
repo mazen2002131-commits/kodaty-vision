@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_app/customers/$id")({
 });
 
 function CustomerProfile() {
-  const c = Route.useLoaderData();
+  const c: Customer = Route.useLoaderData();
   const custOrders = orders.filter(o => o.customerId === c.id);
   const custSubs = subscriptions.filter(s => s.customerId === c.id);
   const aov = custOrders.length ? custOrders.reduce((s, o) => s + o.amount, 0) / custOrders.length : 0;

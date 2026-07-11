@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_app/orders/$id")({
 });
 
 function OrderDetail() {
-  const o = Route.useLoaderData();
+  const o: Order = Route.useLoaderData();
   const c = customerById(o.customerId);
   const p = productById(o.productId);
   const profit = o.amount - o.cost;

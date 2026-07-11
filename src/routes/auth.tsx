@@ -82,7 +82,7 @@ function AuthPage() {
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden">
             <div className="flex items-center gap-2 text-lg font-semibold">
-              <span className="grid size-8 place-items-center rounded-lg brand-gradient text-white">K</span>
+              <span className="grid size-8 place-items-center rounded-lg bg-white p-1 ring-1 ring-border"><img src={kodatyLogo.url} alt="Kodaty" className="h-full w-full object-contain" /></span>
               Kodaty
             </div>
           </div>

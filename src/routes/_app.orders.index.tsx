@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Filter, Download, Plus, Loader2 } from "lucide-react";
 import {
   useOrders, useCustomers, useProducts, useCreateOrder,
@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/orders/")({
+  validateSearch: (s: Record<string, unknown>) => ({ new: s.new === 1 || s.new === "1" ? 1 : undefined }),
   component: OrdersList,
   head: () => ({ meta: [{ title: "الطلبات — Kodaty" }] }),
 });

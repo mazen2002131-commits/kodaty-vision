@@ -36,15 +36,20 @@ function Finance() {
 
   const stats = useMemo(() => {
     const revenue = orders.reduce((s, o) => s + Number(o.total), 0);
-    const paid = orders.filter(o => o.status === "delivered").reduce((s, o) => s + Number(o.total), 0);
+    const paidOrders = orders.filter(o => o.status === "delivered");
+    const paid = paidOrders.reduce((s, o) => s + Number(o.total), 0);
+    const cogs = paidOrders.reduce((s, o) =>
+      s + (o.order_items ?? []).reduce((x, it) => x + Number(it.unit_cost ?? 0) * Number(it.qty), 0), 0);
     const unpaid = orders.filter(o => o.status === "pending" || o.status === "processing")
       .reduce((s, o) => s + Number(o.total), 0);
-    const expenses = journal
+    const otherExpenses = journal
       .filter(e => e.debit_account.startsWith("5"))
       .reduce((s, e) => s + Number(e.amount), 0);
+    const expenses = cogs + otherExpenses;
     const profit = paid - expenses;
-    return { revenue, paid, unpaid, expenses, profit, unpaidCount: orders.filter(o => o.status !== "delivered" && o.status !== "cancelled" && o.status !== "refunded").length };
+    return { revenue, paid, unpaid, expenses, cogs, otherExpenses, profit, unpaidCount: orders.filter(o => o.status !== "delivered" && o.status !== "cancelled" && o.status !== "refunded").length };
   }, [orders, journal]);
+
 
   // Cash flow series (last 30 days)
   const cashSeries = useMemo(() => {

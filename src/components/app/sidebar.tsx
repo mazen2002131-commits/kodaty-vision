@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, ShoppingCart, RefreshCw, Users, Package, KeyRound,
   Boxes, Wallet, FileBarChart, LineChart, Megaphone, LifeBuoy,
-  CheckSquare, Zap, Bell, Settings, ChevronsLeft,
+  CheckSquare, Zap, Bell, Settings, ChevronsLeft, ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -34,6 +34,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
     { to: "/tasks", label: "المهام", icon: CheckSquare },
     { to: "/automation", label: "الأتمتة", icon: Zap, adminOnly: true },
     { to: "/notifications", label: "الإشعارات", icon: Bell },
+    { to: "/team", label: "الفريق والصلاحيات", icon: ShieldCheck, adminOnly: true },
     { to: "/settings", label: "الإعدادات", icon: Settings, adminOnly: true },
   ]},
 ];

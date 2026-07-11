@@ -76,7 +76,7 @@ export function AppSidebar() {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 pb-4">
-          {NAV.map(group => (
+          {nav.map(group => (
             <div key={group.section} className="mb-4">
               {!collapsed && (
                 <div className="mb-1 px-2 text-[10px] font-medium uppercase tracking-wider text-sidebar-foreground/40">

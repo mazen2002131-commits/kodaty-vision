@@ -25,6 +25,7 @@ export const listTeam = createServerFn({ method: "GET" })
       full_name: string | null;
       avatar_url: string | null;
       role: "admin" | "staff" | null;
+      permissions: string[];
     }>;
   });
 
@@ -33,6 +34,7 @@ const createSchema = z.object({
   password: z.string().min(8),
   full_name: z.string().min(1).max(120),
   role: z.enum(["admin", "staff"]),
+  permissions: z.array(z.string()).default([]),
 });
 
 export const createTeamMember = createServerFn({ method: "POST" })
@@ -51,7 +53,6 @@ export const createTeamMember = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const uid = created.user!.id;
 
-    // handle_new_user trigger inserts a default role — override to requested role.
     await supabaseAdmin.from("user_roles").delete().eq("user_id", uid);
     const { error: rErr } = await supabaseAdmin
       .from("user_roles")
@@ -61,6 +62,13 @@ export const createTeamMember = createServerFn({ method: "POST" })
     await supabaseAdmin
       .from("profiles")
       .upsert({ id: uid, full_name: data.full_name }, { onConflict: "id" });
+
+    // Set granular permissions (admins get all implicitly; still persist for clarity).
+    const { error: pErr } = await context.supabase.rpc("admin_set_permissions", {
+      _user_id: uid,
+      _perms: data.permissions,
+    });
+    if (pErr) throw new Error(pErr.message);
 
     return { id: uid };
   });
@@ -77,6 +85,23 @@ export const updateTeamRole = createServerFn({ method: "POST" })
     const { error } = await context.supabase.rpc("admin_set_role", {
       _user_id: data.user_id,
       _role: data.role,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const setPermsSchema = z.object({
+  user_id: z.string().uuid(),
+  permissions: z.array(z.string()),
+});
+
+export const updateTeamPermissions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => setPermsSchema.parse(data))
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase.rpc("admin_set_permissions", {
+      _user_id: data.user_id,
+      _perms: data.permissions,
     });
     if (error) throw new Error(error.message);
     return { ok: true };

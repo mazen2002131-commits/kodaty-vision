@@ -106,6 +106,9 @@ export function useOrders() {
   });
 }
 
+export type OrderStatus = "pending" | "processing" | "delivered" | "cancelled" | "refunded";
+export type OrderPriority = "low" | "normal" | "high" | "urgent";
+
 export function useCreateOrder() {
   const qc = useQueryClient();
   return useMutation({
@@ -115,8 +118,8 @@ export function useCreateOrder() {
       product_name: string;
       unit_price: number;
       qty: number;
-      priority?: string;
-      status?: string;
+      priority?: OrderPriority;
+      status?: OrderStatus;
     }) => {
       const { data: u } = await supabase.auth.getUser();
       const total = input.unit_price * input.qty;
@@ -124,7 +127,7 @@ export function useCreateOrder() {
         .from("orders")
         .insert({
           customer_id: input.customer_id,
-          status: input.status ?? "new",
+          status: input.status ?? "pending",
           priority: input.priority ?? "normal",
           total,
           created_by: u.user?.id,
@@ -151,13 +154,14 @@ export function useCreateOrder() {
 export function useUpdateOrderStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status }: { id: string; status: OrderStatus }) => {
       const { error } = await supabase.from("orders").update({ status }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
   });
 }
+
 
 // Helper — deterministic avatar color from a string
 export function avatarColor(seed: string): string {

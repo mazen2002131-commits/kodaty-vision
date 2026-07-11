@@ -1,9 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { Construction } from "lucide-react";
 
-interface Props { title: string; description: string }
-
-export function Placeholder({ title, description }: Props) {
+export function Placeholder({ title, description }: { title: string; description: string }) {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="surface-elevated relative overflow-hidden p-10 text-center">
@@ -22,11 +19,4 @@ export function Placeholder({ title, description }: Props) {
       </div>
     </div>
   );
-}
-
-export function makePlaceholderRoute(path: `/_app/${string}`, title: string, description: string) {
-  return createFileRoute(path)({
-    component: () => <Placeholder title={title} description={description} />,
-    head: () => ({ meta: [{ title: `${title} — Kodaty` }] }),
-  });
 }

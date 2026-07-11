@@ -2,10 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Search, Filter, Download, Plus, Loader2 } from "lucide-react";
 import {
-  useOrders, useCustomers, useProducts, useCreateOrder,
+  useOrders, useCustomers, useProducts, useCreateOrder, useDeleteOrder,
   avatarColor, formatEGP,
   type OrderStatus, type OrderPriority,
 } from "@/lib/db";
+
 import { StatusPill, Avatar, PriorityBadge } from "@/components/app/pills";
 import { cn } from "@/lib/utils";
 import {

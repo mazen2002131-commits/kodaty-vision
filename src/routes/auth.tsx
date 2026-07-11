@@ -19,10 +19,8 @@ type Mode = "signin" | "signup";
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -37,22 +35,9 @@ function AuthPage() {
     e.preventDefault();
     setError(null); setInfo(null); setBusy(true);
     try {
-      if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email, password,
-          options: {
-            data: { full_name: fullName || email.split("@")[0] },
-            emailRedirectTo: window.location.origin,
-          },
-        });
-        if (error) throw error;
-        if (data.session) navigate({ to: "/" });
-        else setInfo("تم إنشاء الحساب. سجّل الدخول للمتابعة.");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        navigate({ to: "/" });
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      navigate({ to: "/" });
     } catch (err: any) {
       setError(err?.message ?? "حدث خطأ غير متوقع");
     } finally {

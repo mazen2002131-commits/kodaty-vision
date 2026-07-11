@@ -8,6 +8,8 @@ import { ShortcutsDialog } from "@/components/app/shortcuts-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/lib/theme";
 import { Loader2 } from "lucide-react";
+import { RoleProvider } from "@/lib/roles";
+import { useRealtimeInvalidate } from "@/lib/realtime";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,

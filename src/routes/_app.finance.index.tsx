@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_app/finance")({
+export const Route = createFileRoute("/_app/finance/")({
   component: () => (<RequireAdmin><Finance /></RequireAdmin>),
   head: () => ({ meta: [{ title: "المالية والمحاسبة — Kodaty" }] }),
 });

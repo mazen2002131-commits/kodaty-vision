@@ -25,12 +25,12 @@ import { Route as AppNotificationsRouteImport } from './routes/_app.notification
 import { Route as AppMarketingRouteImport } from './routes/_app.marketing'
 import { Route as AppLicensesRouteImport } from './routes/_app.licenses'
 import { Route as AppInventoryRouteImport } from './routes/_app.inventory'
-import { Route as AppFinanceRouteImport } from './routes/_app.finance'
 import { Route as AppCustomersRouteImport } from './routes/_app.customers'
 import { Route as AppAutomationRouteImport } from './routes/_app.automation'
 import { Route as AppAssistantRouteImport } from './routes/_app.assistant'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
 import { Route as AppOrdersIndexRouteImport } from './routes/_app.orders.index'
+import { Route as AppFinanceIndexRouteImport } from './routes/_app.finance.index'
 import { Route as AppCustomersIndexRouteImport } from './routes/_app.customers.index'
 import { Route as AppOrdersIdRouteImport } from './routes/_app.orders.$id'
 import { Route as AppFinanceJournalRouteImport } from './routes/_app.finance.journal'
@@ -115,11 +115,6 @@ const AppInventoryRoute = AppInventoryRouteImport.update({
   path: '/inventory',
   getParentRoute: () => AppRoute,
 } as any)
-const AppFinanceRoute = AppFinanceRouteImport.update({
-  id: '/finance',
-  path: '/finance',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppCustomersRoute = AppCustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
@@ -145,6 +140,11 @@ const AppOrdersIndexRoute = AppOrdersIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppOrdersRoute,
 } as any)
+const AppFinanceIndexRoute = AppFinanceIndexRouteImport.update({
+  id: '/finance/',
+  path: '/finance/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -156,9 +156,9 @@ const AppOrdersIdRoute = AppOrdersIdRouteImport.update({
   getParentRoute: () => AppOrdersRoute,
 } as any)
 const AppFinanceJournalRoute = AppFinanceJournalRouteImport.update({
-  id: '/journal',
-  path: '/journal',
-  getParentRoute: () => AppFinanceRoute,
+  id: '/finance/journal',
+  path: '/finance/journal',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppCustomersIdRoute = AppCustomersIdRouteImport.update({
   id: '/$id',
@@ -173,7 +173,6 @@ export interface FileRoutesByFullPath {
   '/assistant': typeof AppAssistantRoute
   '/automation': typeof AppAutomationRoute
   '/customers': typeof AppCustomersRouteWithChildren
-  '/finance': typeof AppFinanceRouteWithChildren
   '/inventory': typeof AppInventoryRoute
   '/licenses': typeof AppLicensesRoute
   '/marketing': typeof AppMarketingRoute
@@ -191,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/finance/journal': typeof AppFinanceJournalRoute
   '/orders/$id': typeof AppOrdersIdRoute
   '/customers/': typeof AppCustomersIndexRoute
+  '/finance/': typeof AppFinanceIndexRoute
   '/orders/': typeof AppOrdersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -198,7 +198,6 @@ export interface FileRoutesByTo {
   '/analytics': typeof AppAnalyticsRoute
   '/assistant': typeof AppAssistantRoute
   '/automation': typeof AppAutomationRoute
-  '/finance': typeof AppFinanceRouteWithChildren
   '/inventory': typeof AppInventoryRoute
   '/licenses': typeof AppLicensesRoute
   '/marketing': typeof AppMarketingRoute
@@ -216,6 +215,7 @@ export interface FileRoutesByTo {
   '/finance/journal': typeof AppFinanceJournalRoute
   '/orders/$id': typeof AppOrdersIdRoute
   '/customers': typeof AppCustomersIndexRoute
+  '/finance': typeof AppFinanceIndexRoute
   '/orders': typeof AppOrdersIndexRoute
 }
 export interface FileRoutesById {
@@ -226,7 +226,6 @@ export interface FileRoutesById {
   '/_app/assistant': typeof AppAssistantRoute
   '/_app/automation': typeof AppAutomationRoute
   '/_app/customers': typeof AppCustomersRouteWithChildren
-  '/_app/finance': typeof AppFinanceRouteWithChildren
   '/_app/inventory': typeof AppInventoryRoute
   '/_app/licenses': typeof AppLicensesRoute
   '/_app/marketing': typeof AppMarketingRoute
@@ -245,6 +244,7 @@ export interface FileRoutesById {
   '/_app/finance/journal': typeof AppFinanceJournalRoute
   '/_app/orders/$id': typeof AppOrdersIdRoute
   '/_app/customers/': typeof AppCustomersIndexRoute
+  '/_app/finance/': typeof AppFinanceIndexRoute
   '/_app/orders/': typeof AppOrdersIndexRoute
 }
 export interface FileRouteTypes {
@@ -256,7 +256,6 @@ export interface FileRouteTypes {
     | '/assistant'
     | '/automation'
     | '/customers'
-    | '/finance'
     | '/inventory'
     | '/licenses'
     | '/marketing'
@@ -274,6 +273,7 @@ export interface FileRouteTypes {
     | '/finance/journal'
     | '/orders/$id'
     | '/customers/'
+    | '/finance/'
     | '/orders/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -281,7 +281,6 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/assistant'
     | '/automation'
-    | '/finance'
     | '/inventory'
     | '/licenses'
     | '/marketing'
@@ -299,6 +298,7 @@ export interface FileRouteTypes {
     | '/finance/journal'
     | '/orders/$id'
     | '/customers'
+    | '/finance'
     | '/orders'
   id:
     | '__root__'
@@ -308,7 +308,6 @@ export interface FileRouteTypes {
     | '/_app/assistant'
     | '/_app/automation'
     | '/_app/customers'
-    | '/_app/finance'
     | '/_app/inventory'
     | '/_app/licenses'
     | '/_app/marketing'
@@ -327,6 +326,7 @@ export interface FileRouteTypes {
     | '/_app/finance/journal'
     | '/_app/orders/$id'
     | '/_app/customers/'
+    | '/_app/finance/'
     | '/_app/orders/'
   fileRoutesById: FileRoutesById
 }
@@ -450,13 +450,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInventoryRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/finance': {
-      id: '/_app/finance'
-      path: '/finance'
-      fullPath: '/finance'
-      preLoaderRoute: typeof AppFinanceRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/customers': {
       id: '/_app/customers'
       path: '/customers'
@@ -492,6 +485,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrdersIndexRouteImport
       parentRoute: typeof AppOrdersRoute
     }
+    '/_app/finance/': {
+      id: '/_app/finance/'
+      path: '/finance'
+      fullPath: '/finance/'
+      preLoaderRoute: typeof AppFinanceIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/customers/': {
       id: '/_app/customers/'
       path: '/'
@@ -508,10 +508,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/finance/journal': {
       id: '/_app/finance/journal'
-      path: '/journal'
+      path: '/finance/journal'
       fullPath: '/finance/journal'
       preLoaderRoute: typeof AppFinanceJournalRouteImport
-      parentRoute: typeof AppFinanceRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/customers/$id': {
       id: '/_app/customers/$id'
@@ -537,18 +537,6 @@ const AppCustomersRouteWithChildren = AppCustomersRoute._addFileChildren(
   AppCustomersRouteChildren,
 )
 
-interface AppFinanceRouteChildren {
-  AppFinanceJournalRoute: typeof AppFinanceJournalRoute
-}
-
-const AppFinanceRouteChildren: AppFinanceRouteChildren = {
-  AppFinanceJournalRoute: AppFinanceJournalRoute,
-}
-
-const AppFinanceRouteWithChildren = AppFinanceRoute._addFileChildren(
-  AppFinanceRouteChildren,
-)
-
 interface AppOrdersRouteChildren {
   AppOrdersIdRoute: typeof AppOrdersIdRoute
   AppOrdersIndexRoute: typeof AppOrdersIndexRoute
@@ -568,7 +556,6 @@ interface AppRouteChildren {
   AppAssistantRoute: typeof AppAssistantRoute
   AppAutomationRoute: typeof AppAutomationRoute
   AppCustomersRoute: typeof AppCustomersRouteWithChildren
-  AppFinanceRoute: typeof AppFinanceRouteWithChildren
   AppInventoryRoute: typeof AppInventoryRoute
   AppLicensesRoute: typeof AppLicensesRoute
   AppMarketingRoute: typeof AppMarketingRoute
@@ -582,6 +569,8 @@ interface AppRouteChildren {
   AppTasksRoute: typeof AppTasksRoute
   AppTeamRoute: typeof AppTeamRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppFinanceJournalRoute: typeof AppFinanceJournalRoute
+  AppFinanceIndexRoute: typeof AppFinanceIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -589,7 +578,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppAssistantRoute: AppAssistantRoute,
   AppAutomationRoute: AppAutomationRoute,
   AppCustomersRoute: AppCustomersRouteWithChildren,
-  AppFinanceRoute: AppFinanceRouteWithChildren,
   AppInventoryRoute: AppInventoryRoute,
   AppLicensesRoute: AppLicensesRoute,
   AppMarketingRoute: AppMarketingRoute,
@@ -603,6 +591,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppTasksRoute: AppTasksRoute,
   AppTeamRoute: AppTeamRoute,
   AppIndexRoute: AppIndexRoute,
+  AppFinanceJournalRoute: AppFinanceJournalRoute,
+  AppFinanceIndexRoute: AppFinanceIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

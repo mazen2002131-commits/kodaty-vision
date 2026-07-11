@@ -77,6 +77,24 @@ export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
             <Plus className="h-4 w-4" /> <span className="hidden sm:inline">طلب جديد</span>
           </button>
 
+          <button
+            onClick={toggle}
+            className="rounded-lg border border-border bg-surface-sunken p-2 text-muted-foreground transition hover:text-foreground"
+            aria-label="تبديل الوضع الليلي"
+            title="تبديل الوضع (⌘\\)"
+          >
+            {resolved === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+
+          <button
+            onClick={onOpenShortcuts}
+            className="hidden rounded-lg border border-border bg-surface-sunken p-2 text-muted-foreground transition hover:text-foreground sm:inline-flex"
+            aria-label="اختصارات لوحة المفاتيح"
+            title="اختصارات (?)"
+          >
+            <Keyboard className="h-4 w-4" />
+          </button>
+
           <DropdownMenu>
             <DropdownMenuTrigger className="relative rounded-lg border border-border bg-surface-sunken p-2 text-muted-foreground transition hover:text-foreground">
               <Bell className="h-4 w-4" />

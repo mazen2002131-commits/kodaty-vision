@@ -18,9 +18,11 @@ export type Product = {
   name: string;
   category: string | null;
   price: number;
+  cost_price: number;
   currency: string;
   active: boolean;
 };
+
 
 export type Order = {
   id: string;

@@ -1,36 +1,59 @@
 import { cn } from "@/lib/utils";
-import type { OrderStatus, Priority } from "@/lib/mock/data";
-import { statusLabels, priorityLabels } from "@/lib/mock/data";
 
-const STATUS_STYLE: Record<OrderStatus, string> = {
+export type AnyOrderStatus =
+  | "pending" | "processing" | "delivered" | "cancelled" | "refunded"
+  | "new" | "completed";
+export type AnyPriority = "low" | "normal" | "high" | "urgent";
+
+const STATUS_STYLE: Record<AnyOrderStatus, string> = {
   new: "bg-info/10 text-info border-info/20",
-  processing: "bg-warning/10 text-warning border-warning/25",
-  completed: "bg-success/10 text-success border-success/25",
   pending: "bg-muted text-muted-foreground border-border",
-  refunded: "bg-destructive/10 text-destructive border-destructive/20",
+  processing: "bg-warning/10 text-warning border-warning/25",
+  delivered: "bg-success/10 text-success border-success/25",
+  completed: "bg-success/10 text-success border-success/25",
   cancelled: "bg-muted text-muted-foreground border-border",
+  refunded: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
-export function StatusPill({ status, className }: { status: OrderStatus; className?: string }) {
+const STATUS_LABEL: Record<AnyOrderStatus, string> = {
+  new: "جديد",
+  pending: "معلّق",
+  processing: "قيد التنفيذ",
+  delivered: "مُسلَّم",
+  completed: "مكتمل",
+  cancelled: "ملغى",
+  refunded: "مسترد",
+};
+
+export function StatusPill({ status, className }: { status: AnyOrderStatus | string; className?: string }) {
+  const s = (status in STATUS_STYLE ? status : "pending") as AnyOrderStatus;
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium", STATUS_STYLE[status], className)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium", STATUS_STYLE[s], className)}>
       <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
-      {statusLabels[status]}
+      {STATUS_LABEL[s]}
     </span>
   );
 }
 
-const PRIORITY_STYLE: Record<Priority, string> = {
+const PRIORITY_STYLE: Record<AnyPriority, string> = {
   low: "bg-muted text-muted-foreground",
   normal: "bg-secondary text-secondary-foreground",
   high: "bg-warning/15 text-warning",
   urgent: "bg-destructive/15 text-destructive",
 };
 
-export function PriorityBadge({ priority }: { priority: Priority }) {
+const PRIORITY_LABEL: Record<AnyPriority, string> = {
+  low: "منخفضة",
+  normal: "عادية",
+  high: "مرتفعة",
+  urgent: "عاجلة",
+};
+
+export function PriorityBadge({ priority }: { priority: AnyPriority | string }) {
+  const p = (priority in PRIORITY_STYLE ? priority : "normal") as AnyPriority;
   return (
-    <span className={cn("inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium", PRIORITY_STYLE[priority])}>
-      {priorityLabels[priority]}
+    <span className={cn("inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium", PRIORITY_STYLE[p])}>
+      {PRIORITY_LABEL[p]}
     </span>
   );
 }

@@ -174,8 +174,8 @@ export const keys: LicenseKey[] = Array.from({ length: 60 }, (_, i) => {
 // Chart data
 export const salesSeries = Array.from({ length: 30 }, (_, i) => ({
   day: `${i + 1}`,
-  sales: 4000 + Math.round(Math.sin(i / 3) * 1800 + Math.random() * 2200 + i * 60),
-  profit: 1800 + Math.round(Math.cos(i / 4) * 900 + Math.random() * 1100 + i * 30),
+  sales: 4000 + Math.round(Math.sin(i / 3) * 1800 + Math.sin(i * 1.7) * 1100 + i * 60),
+  profit: 1800 + Math.round(Math.cos(i / 4) * 900 + Math.cos(i * 1.3) * 550 + i * 30),
 }));
 
 export const categorySplit = [

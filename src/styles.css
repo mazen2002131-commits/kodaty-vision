@@ -212,7 +212,24 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
-  box-shadow: 0 1px 0 oklch(0 0 0 / 0.02), 0 1px 3px oklch(0 0 0 / 0.04);
+  box-shadow: var(--shadow-card);
+}
+
+@utility surface-flat {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+}
+
+@utility card-hairline {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: border-color 150ms, box-shadow 150ms, transform 150ms;
+}
+.card-hairline:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-card);
 }
 
 @utility brand-gradient-text {
@@ -247,6 +264,22 @@
 .input-base:focus {
   border-color: var(--brand-500);
   box-shadow: 0 0 0 3px oklch(from var(--brand-500) l c h / 0.15);
+}
+
+/* Airy Stripe-style table rows */
+@utility row-airy {
+  padding-block: 0.875rem;
+  padding-inline: 1rem;
+  transition: background-color 120ms;
+}
+.row-airy:hover { background: var(--color-surface-sunken); }
+
+/* Refined focus ring for interactive elements */
+@utility focus-ring {
+  outline: none;
+}
+.focus-ring:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--brand-500);
 }
 
 

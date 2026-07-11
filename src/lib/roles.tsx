@@ -40,7 +40,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       }
       const [{ data: rolesData }, { data: permsData }] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", uid),
-        supabase.from("user_permissions").select("permission").eq("user_id", uid),
+        (supabase as any).from("user_permissions").select("permission").eq("user_id", uid),
       ]);
       if (cancelled) return;
       const roles = (rolesData ?? []).map(r => r.role as AppRole);

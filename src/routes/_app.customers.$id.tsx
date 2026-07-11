@@ -1,12 +1,12 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowRight, Mail, MessageCircle, MapPin } from "lucide-react";
-import { customers, orders, subscriptions, productById, formatCurrency, formatNumber, relativeTime, statusLabels } from "@/lib/mock/data";
+import { customers, orders, subscriptions, productById, formatCurrency, formatNumber, relativeTime, type Customer } from "@/lib/mock/data";
 import { Avatar, StatusPill } from "@/components/app/pills";
 
 export const Route = createFileRoute("/_app/customers/$id")({
   component: CustomerProfile,
   head: ({ params }) => ({ meta: [{ title: `عميل ${params.id} — Kodaty` }] }),
-  loader: ({ params }) => {
+  loader: ({ params }): Customer => {
     const c = customers.find(c => c.id === params.id);
     if (!c) throw notFound();
     return c;

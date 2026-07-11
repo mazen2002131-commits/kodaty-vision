@@ -20,11 +20,12 @@ const CRUMBS: Record<string, string> = {
   "/automation": "الأتمتة", "/notifications": "الإشعارات", "/settings": "الإعدادات",
 };
 
-export function Topbar({ onOpenPalette }: TopbarProps) {
+export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
   const pathname = useRouterState({ select: s => s.location.pathname });
   const base = "/" + (pathname.split("/")[1] || "");
   const crumb = CRUMBS[base] || "Kodaty";
   const navigate = useNavigate();
+  const { resolved, toggle } = useTheme();
   const [profile, setProfile] = useState<{ name: string; email: string; initial: string }>({ name: "…", email: "", initial: "؟" });
 
   useEffect(() => {

@@ -150,15 +150,24 @@ export const subscriptions: Subscription[] = customers.slice(0, 12).map((c, i) =
 
 export const keys: LicenseKey[] = Array.from({ length: 60 }, (_, i) => {
   const p = products[i % products.length];
-  const seg = () => Math.random().toString(36).slice(2, 7).toUpperCase();
+  // Deterministic pseudo-random so SSR & client render the same string.
+  const seg = (n: number) => {
+    let s = "";
+    let x = (i + 1) * 9973 + n * 31;
+    for (let k = 0; k < 5; k++) {
+      x = (x * 1103515245 + 12345) & 0x7fffffff;
+      s += "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[x % 32];
+    }
+    return s;
+  };
   return {
     id: `k${i + 1}`,
     productId: p.id,
-    key: `${seg()}-${seg()}-${seg()}-${seg()}-${seg()}`,
+    key: `${seg(1)}-${seg(2)}-${seg(3)}-${seg(4)}-${seg(5)}`,
     status: i % 5 === 0 ? "reserved" : i % 3 === 0 ? "sold" : "available",
     orderId: i % 3 === 0 ? `o${i + 1}` : undefined,
     customerId: i % 3 === 0 ? `c${(i % customers.length) + 1}` : undefined,
-    addedAt: new Date(Date.now() - i * 86400_000).toISOString(),
+    addedAt: new Date(2026, 5, 1 + (i % 28)).toISOString(),
   };
 });
 

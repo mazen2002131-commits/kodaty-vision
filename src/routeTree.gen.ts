@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as ApiAssistantRouteImport } from './routes/api/assistant'
 import { Route as AppTasksRouteImport } from './routes/_app.tasks'
 import { Route as AppSupportRouteImport } from './routes/_app.support'
 import { Route as AppSubscriptionsRouteImport } from './routes/_app.subscriptions'
@@ -46,6 +47,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const ApiAssistantRoute = ApiAssistantRouteImport.update({
+  id: '/api/assistant',
+  path: '/api/assistant',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppTasksRoute = AppTasksRouteImport.update({
   id: '/tasks',
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/subscriptions': typeof AppSubscriptionsRoute
   '/support': typeof AppSupportRoute
   '/tasks': typeof AppTasksRoute
+  '/api/assistant': typeof ApiAssistantRoute
   '/customers/$id': typeof AppCustomersIdRoute
   '/orders/$id': typeof AppOrdersIdRoute
   '/customers/': typeof AppCustomersIndexRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/subscriptions': typeof AppSubscriptionsRoute
   '/support': typeof AppSupportRoute
   '/tasks': typeof AppTasksRoute
+  '/api/assistant': typeof ApiAssistantRoute
   '/': typeof AppIndexRoute
   '/customers/$id': typeof AppCustomersIdRoute
   '/orders/$id': typeof AppOrdersIdRoute
@@ -214,6 +222,7 @@ export interface FileRoutesById {
   '/_app/subscriptions': typeof AppSubscriptionsRoute
   '/_app/support': typeof AppSupportRoute
   '/_app/tasks': typeof AppTasksRoute
+  '/api/assistant': typeof ApiAssistantRoute
   '/_app/': typeof AppIndexRoute
   '/_app/customers/$id': typeof AppCustomersIdRoute
   '/_app/orders/$id': typeof AppOrdersIdRoute
@@ -241,6 +250,7 @@ export interface FileRouteTypes {
     | '/subscriptions'
     | '/support'
     | '/tasks'
+    | '/api/assistant'
     | '/customers/$id'
     | '/orders/$id'
     | '/customers/'
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
     | '/subscriptions'
     | '/support'
     | '/tasks'
+    | '/api/assistant'
     | '/'
     | '/customers/$id'
     | '/orders/$id'
@@ -287,6 +298,7 @@ export interface FileRouteTypes {
     | '/_app/subscriptions'
     | '/_app/support'
     | '/_app/tasks'
+    | '/api/assistant'
     | '/_app/'
     | '/_app/customers/$id'
     | '/_app/orders/$id'
@@ -297,6 +309,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiAssistantRoute: typeof ApiAssistantRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -321,6 +334,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/api/assistant': {
+      id: '/api/assistant'
+      path: '/api/assistant'
+      fullPath: '/api/assistant'
+      preLoaderRoute: typeof ApiAssistantRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/tasks': {
       id: '/_app/tasks'
@@ -538,6 +558,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiAssistantRoute: ApiAssistantRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

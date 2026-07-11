@@ -126,6 +126,7 @@ export function useCreateOrder() {
       const { data: order, error } = await supabase
         .from("orders")
         .insert({
+          code: "",
           customer_id: input.customer_id,
           status: input.status ?? "pending",
           priority: input.priority ?? "normal",

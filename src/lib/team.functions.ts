@@ -64,7 +64,7 @@ export const createTeamMember = createServerFn({ method: "POST" })
       .upsert({ id: uid, full_name: data.full_name }, { onConflict: "id" });
 
     // Set granular permissions (admins get all implicitly; still persist for clarity).
-    const { error: pErr } = await context.supabase.rpc("admin_set_permissions", {
+    const { error: pErr } = await (context.supabase as any).rpc("admin_set_permissions", {
       _user_id: uid,
       _perms: data.permissions,
     });
@@ -99,7 +99,7 @@ export const updateTeamPermissions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => setPermsSchema.parse(data))
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase.rpc("admin_set_permissions", {
+    const { error } = await (context.supabase as any).rpc("admin_set_permissions", {
       _user_id: data.user_id,
       _perms: data.permissions,
     });

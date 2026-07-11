@@ -189,7 +189,7 @@ export const categorySplit = [
 ];
 
 export function formatCurrency(n: number) {
-  return new Intl.NumberFormat("ar-EG", { style: "currency", currency: "SAR", maximumFractionDigits: 0 }).format(n);
+  return new Intl.NumberFormat("ar-EG", { style: "currency", currency: "EGP", maximumFractionDigits: 0 }).format(n);
 }
 
 export function formatNumber(n: number) {
@@ -228,6 +228,6 @@ export const notifications = [
   { id: "n1", type: "order", title: "طلب جديد #KD-10295", body: "أحمد العتيبي · Adobe Creative Cloud", at: new Date(NOW - 120_000).toISOString() },
   { id: "n2", type: "sub", title: "اشتراك سينتهي قريباً", body: "منى القحطاني · Microsoft 365 · بعد 3 أيام", at: new Date(NOW - 20 * 60_000).toISOString() },
   { id: "n3", type: "stock", title: "المخزون منخفض", body: "AutoCAD 2026 · تبقى 4 مفاتيح", at: new Date(NOW - 3600_000).toISOString() },
-  { id: "n4", type: "payment", title: "فشل عملية دفع", body: "خالد النعيمي · فودافون كاش · 950 ر.س", at: new Date(NOW - 5 * 3600_000).toISOString() },
+  { id: "n4", type: "payment", title: "فشل عملية دفع", body: "خالد النعيمي · فودافون كاش · 950 ج.م", at: new Date(NOW - 5 * 3600_000).toISOString() },
   { id: "n5", type: "task", title: "مهمة جديدة", body: "متابعة تجديد اشتراك سارة المطيري", at: new Date(NOW - 8 * 3600_000).toISOString() },
 ];

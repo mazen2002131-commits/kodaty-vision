@@ -1,14 +1,15 @@
-import { Bell, Search, Plus, LogOut, User as UserIcon } from "lucide-react";
+import { Bell, Search, Plus, LogOut, User as UserIcon, Sun, Moon, Keyboard } from "lucide-react";
 import { useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { notifications, relativeTime } from "@/lib/mock/data";
 import { supabase } from "@/integrations/supabase/client";
+import { useTheme } from "@/lib/theme";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuTrigger,
   DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
-interface TopbarProps { onOpenPalette: () => void }
+interface TopbarProps { onOpenPalette: () => void; onOpenShortcuts: () => void }
 
 const CRUMBS: Record<string, string> = {
   "/": "الرئيسية", "/orders": "الطلبات", "/customers": "العملاء",

@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, ShoppingCart, RefreshCw, Users, Package, KeyRound,
   Boxes, Wallet, FileBarChart, LineChart, Megaphone, LifeBuoy,
-  CheckSquare, Zap, Bell, Settings, ChevronsLeft,
+  CheckSquare, Zap, Bell, Settings, ChevronsLeft, ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";

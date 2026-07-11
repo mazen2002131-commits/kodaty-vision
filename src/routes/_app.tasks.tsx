@@ -39,7 +39,10 @@ const columns: { id: ColumnId; label: string; tone: string }[] = [
 function Tasks() {
   const [board, setBoard] = useState(initial);
   const [dragging, setDragging] = useState<{ from: ColumnId; id: string } | null>(null);
-  const [newTitle, setNewTitle] = useState("");
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<{ title: string; assignee: string; priority: Task["priority"]; column: ColumnId }>({
+    title: "", assignee: "أنت", priority: "normal", column: "todo",
+  });
 
   const move = (to: ColumnId) => {
     if (!dragging) return;
@@ -53,13 +56,12 @@ function Tasks() {
     setDragging(null);
   };
 
-  const add = () => {
-    if (!newTitle.trim()) return;
-    setBoard({
-      ...board,
-      todo: [{ id: crypto.randomUUID(), title: newTitle, assignee: "أنت", priority: "normal" }, ...board.todo],
-    });
-    setNewTitle("");
+  const submit = () => {
+    if (!form.title.trim()) return;
+    const task: Task = { id: crypto.randomUUID(), title: form.title.trim(), assignee: form.assignee || "أنت", priority: form.priority };
+    setBoard(prev => ({ ...prev, [form.column]: [task, ...prev[form.column]] }));
+    setForm({ title: "", assignee: "أنت", priority: "normal", column: "todo" });
+    setOpen(false);
   };
 
   const total = Object.values(board).flat().length;
@@ -71,19 +73,71 @@ function Tasks() {
           <h1 className="text-2xl font-semibold tracking-tight">المهام</h1>
           <p className="text-sm text-muted-foreground mt-1">{total} مهمة موزّعة على الفريق</p>
         </div>
-        <div className="flex items-center gap-2">
-          <input
-            value={newTitle}
-            onChange={e => setNewTitle(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && add()}
-            placeholder="مهمة سريعة…"
-            className="input-base w-56"
-          />
-          <button onClick={add} className="inline-flex items-center gap-2 rounded-xl brand-gradient text-white px-4 py-2 text-sm font-medium shadow-brand">
-            <Plus className="h-4 w-4" /> إضافة
-          </button>
-        </div>
+        <button
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-2 rounded-xl brand-gradient text-white px-4 py-2 text-sm font-medium shadow-brand"
+        >
+          <Plus className="h-4 w-4" /> مهمة جديدة
+        </button>
       </div>
+
+      {open && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={() => setOpen(false)}>
+          <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-elevated" onClick={e => e.stopPropagation()}>
+            <h2 className="font-display text-lg font-bold">مهمة جديدة</h2>
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="text-xs font-medium">العنوان</label>
+                <input
+                  autoFocus
+                  value={form.title}
+                  onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                  onKeyDown={e => e.key === "Enter" && submit()}
+                  placeholder="ماذا نفعل؟"
+                  className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-medium">المسؤول</label>
+                  <input
+                    value={form.assignee}
+                    onChange={e => setForm(f => ({ ...f, assignee: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium">الأولوية</label>
+                  <select
+                    value={form.priority}
+                    onChange={e => setForm(f => ({ ...f, priority: e.target.value as Task["priority"] }))}
+                    className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                  >
+                    <option value="low">منخفضة</option>
+                    <option value="normal">عادية</option>
+                    <option value="high">عالية</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium">العمود</label>
+                <select
+                  value={form.column}
+                  onChange={e => setForm(f => ({ ...f, column: e.target.value as ColumnId }))}
+                  className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                >
+                  {columns.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setOpen(false)} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">إلغاء</button>
+              <button onClick={submit} className="rounded-lg brand-gradient text-white px-4 py-2 text-sm font-medium shadow-brand">إضافة</button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {columns.map(col => (

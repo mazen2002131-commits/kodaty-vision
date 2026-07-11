@@ -1,14 +1,15 @@
-import { Bell, Search, Plus, LogOut, User as UserIcon } from "lucide-react";
+import { Bell, Search, Plus, LogOut, User as UserIcon, Sun, Moon, Keyboard } from "lucide-react";
 import { useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { notifications, relativeTime } from "@/lib/mock/data";
 import { supabase } from "@/integrations/supabase/client";
+import { useTheme } from "@/lib/theme";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuTrigger,
   DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
-interface TopbarProps { onOpenPalette: () => void }
+interface TopbarProps { onOpenPalette: () => void; onOpenShortcuts: () => void }
 
 const CRUMBS: Record<string, string> = {
   "/": "الرئيسية", "/orders": "الطلبات", "/customers": "العملاء",
@@ -19,11 +20,12 @@ const CRUMBS: Record<string, string> = {
   "/automation": "الأتمتة", "/notifications": "الإشعارات", "/settings": "الإعدادات",
 };
 
-export function Topbar({ onOpenPalette }: TopbarProps) {
+export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
   const pathname = useRouterState({ select: s => s.location.pathname });
   const base = "/" + (pathname.split("/")[1] || "");
   const crumb = CRUMBS[base] || "Kodaty";
   const navigate = useNavigate();
+  const { resolved, toggle } = useTheme();
   const [profile, setProfile] = useState<{ name: string; email: string; initial: string }>({ name: "…", email: "", initial: "؟" });
 
   useEffect(() => {
@@ -73,6 +75,24 @@ export function Topbar({ onOpenPalette }: TopbarProps) {
 
           <button className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-brand transition hover:opacity-90">
             <Plus className="h-4 w-4" /> <span className="hidden sm:inline">طلب جديد</span>
+          </button>
+
+          <button
+            onClick={toggle}
+            className="rounded-lg border border-border bg-surface-sunken p-2 text-muted-foreground transition hover:text-foreground"
+            aria-label="تبديل الوضع الليلي"
+            title="تبديل الوضع (⌘\\)"
+          >
+            {resolved === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+
+          <button
+            onClick={onOpenShortcuts}
+            className="hidden rounded-lg border border-border bg-surface-sunken p-2 text-muted-foreground transition hover:text-foreground sm:inline-flex"
+            aria-label="اختصارات لوحة المفاتيح"
+            title="اختصارات (?)"
+          >
+            <Keyboard className="h-4 w-4" />
           </button>
 
           <DropdownMenu>

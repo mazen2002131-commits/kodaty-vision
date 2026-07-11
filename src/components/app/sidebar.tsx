@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 const NAV = [
   { section: "المساحة", items: [
@@ -86,17 +87,28 @@ export function AppSidebar() {
                         className={cn(
                           "group relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors",
                           active
-                            ? "bg-sidebar-accent text-white"
+                            ? "text-white"
                             : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-white",
                         )}
                       >
                         {active && (
-                          <span className="absolute inset-y-1 end-0 w-0.5 rounded-full bg-sidebar-primary" />
+                          <>
+                            <motion.span
+                              layoutId="sidebar-active-bg"
+                              className="absolute inset-0 rounded-lg bg-sidebar-accent"
+                              transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                            />
+                            <motion.span
+                              layoutId="sidebar-active-bar"
+                              className="absolute inset-y-1 end-0 w-0.5 rounded-full bg-sidebar-primary"
+                              transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                            />
+                          </>
                         )}
-                        <Icon className={cn("h-[18px] w-[18px] shrink-0", active ? "text-sidebar-primary" : "")} />
-                        {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+                        <Icon className={cn("relative z-10 h-[18px] w-[18px] shrink-0", active ? "text-sidebar-primary" : "")} />
+                        {!collapsed && <span className="relative z-10 flex-1 truncate">{item.label}</span>}
                         {!collapsed && "badge" in item && item.badge ? (
-                          <span className="rounded-md bg-sidebar-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-sidebar-primary num">
+                          <span className="relative z-10 rounded-md bg-sidebar-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-sidebar-primary num">
                             {item.badge}
                           </span>
                         ) : null}

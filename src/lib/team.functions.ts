@@ -74,12 +74,10 @@ export const updateTeamRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => updateRoleSchema.parse(data))
   .handler(async ({ context, data }) => {
-    await assertAdmin(context as any);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("user_roles").delete().eq("user_id", data.user_id);
-    const { error } = await supabaseAdmin
-      .from("user_roles")
-      .insert({ user_id: data.user_id, role: data.role });
+    const { error } = await context.supabase.rpc("admin_set_role", {
+      _user_id: data.user_id,
+      _role: data.role,
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

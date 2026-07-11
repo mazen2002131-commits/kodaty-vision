@@ -14,16 +14,474 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      customers: {
+        Row: {
+          company: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          tags: string[]
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          tags?: string[]
+          tier?: string
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          tags?: string[]
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      licenses: {
+        Row: {
+          cost: number | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          key: string
+          notes: string | null
+          product_id: string | null
+          product_name: string
+          sold_at: string | null
+          sold_order_id: string | null
+          sold_to: string | null
+          status: Database["public"]["Enums"]["license_status"]
+          updated_at: string
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key: string
+          notes?: string | null
+          product_id?: string | null
+          product_name: string
+          sold_at?: string | null
+          sold_order_id?: string | null
+          sold_to?: string | null
+          status?: Database["public"]["Enums"]["license_status"]
+          updated_at?: string
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key?: string
+          notes?: string | null
+          product_id?: string | null
+          product_name?: string
+          sold_at?: string | null
+          sold_order_id?: string | null
+          sold_to?: string | null
+          status?: Database["public"]["Enums"]["license_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "licenses_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "licenses_sold_order_id_fkey"
+            columns: ["sold_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "licenses_sold_to_fkey"
+            columns: ["sold_to"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          license_id: string | null
+          order_id: string
+          product_id: string | null
+          product_name: string
+          qty: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          license_id?: string | null
+          order_id: string
+          product_id?: string | null
+          product_name: string
+          qty?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          license_id?: string | null
+          order_id?: string
+          product_id?: string | null
+          product_name?: string
+          qty?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_id: string | null
+          id: string
+          notes: string | null
+          payment_method: string | null
+          priority: Database["public"]["Enums"]["order_priority"]
+          status: Database["public"]["Enums"]["order_status"]
+          tags: string[]
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          priority?: Database["public"]["Enums"]["order_priority"]
+          status?: Database["public"]["Enums"]["order_status"]
+          tags?: string[]
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          priority?: Database["public"]["Enums"]["order_priority"]
+          status?: Database["public"]["Enums"]["order_status"]
+          tags?: string[]
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          active: boolean
+          category: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          name: string
+          price: number
+          stock_alert_threshold: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          name: string
+          price?: number
+          stock_alert_threshold?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          name?: string
+          price?: number
+          stock_alert_threshold?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          job_title: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          job_title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          job_title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          auto_renew: boolean
+          created_at: string
+          customer_id: string
+          ends_at: string
+          id: string
+          notes: string | null
+          price: number | null
+          product_id: string | null
+          product_name: string
+          starts_at: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+        }
+        Insert: {
+          auto_renew?: boolean
+          created_at?: string
+          customer_id: string
+          ends_at: string
+          id?: string
+          notes?: string | null
+          price?: number | null
+          product_id?: string | null
+          product_name: string
+          starts_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+        }
+        Update: {
+          auto_renew?: boolean
+          created_at?: string
+          customer_id?: string
+          ends_at?: string
+          id?: string
+          notes?: string | null
+          price?: number | null
+          product_id?: string | null
+          product_name?: string
+          starts_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_messages: {
+        Row: {
+          body: string
+          created_at: string
+          from_customer: boolean
+          id: string
+          sender_id: string | null
+          ticket_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          from_customer?: boolean
+          id?: string
+          sender_id?: string | null
+          ticket_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          from_customer?: boolean
+          id?: string
+          sender_id?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          assignee_id: string | null
+          code: string
+          created_at: string
+          customer_id: string | null
+          id: string
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          code: string
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          code?: string
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "staff" | "viewer"
+      license_status: "available" | "reserved" | "sold" | "revoked"
+      order_priority: "low" | "normal" | "high" | "urgent"
+      order_status:
+        | "pending"
+        | "processing"
+        | "delivered"
+        | "refunded"
+        | "cancelled"
+      subscription_status: "active" | "expiring" | "expired" | "cancelled"
+      ticket_priority: "low" | "normal" | "high" | "urgent"
+      ticket_status: "open" | "pending" | "resolved" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +608,20 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "staff", "viewer"],
+      license_status: ["available", "reserved", "sold", "revoked"],
+      order_priority: ["low", "normal", "high", "urgent"],
+      order_status: [
+        "pending",
+        "processing",
+        "delivered",
+        "refunded",
+        "cancelled",
+      ],
+      subscription_status: ["active", "expiring", "expired", "cancelled"],
+      ticket_priority: ["low", "normal", "high", "urgent"],
+      ticket_status: ["open", "pending", "resolved", "closed"],
+    },
   },
 } as const

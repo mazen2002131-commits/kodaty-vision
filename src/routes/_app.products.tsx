@@ -59,8 +59,20 @@ function Products() {
             <div className="space-y-3">
               <div><Label>الاسم</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
               <div><Label>الفئة</Label><Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} placeholder="Office, Design, Streaming…" /></div>
-              <div><Label>السعر (ج.م)</Label><Input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>سعر البيع (ج.م)</Label><Input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} /></div>
+                <div><Label>سعر الشراء (ج.م)</Label><Input type="number" value={form.cost_price} onChange={e => setForm(f => ({ ...f, cost_price: e.target.value }))} placeholder="التكلفة" /></div>
+              </div>
+              {form.price && form.cost_price && (
+                <div className="rounded-lg bg-primary/5 px-3 py-2 text-xs">
+                  <span className="text-muted-foreground">هامش الربح المتوقع: </span>
+                  <span className="num font-semibold text-primary">
+                    {formatEGP(Number(form.price) - Number(form.cost_price))} ({Number(form.price) > 0 ? Math.round(((Number(form.price) - Number(form.cost_price)) / Number(form.price)) * 100) : 0}%)
+                  </span>
+                </div>
+              )}
             </div>
+
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>
               <Button onClick={submit} disabled={create.isPending}>حفظ</Button>

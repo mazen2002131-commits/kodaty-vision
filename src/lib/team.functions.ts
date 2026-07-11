@@ -39,7 +39,7 @@ const createSchema = z.object({
 
 export const createTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => createSchema.parse(data))
+  .validator((data) => createSchema.parse(data))
   .handler(async ({ context, data }) => {
     await assertAdmin(context as any);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -80,7 +80,7 @@ const updateRoleSchema = z.object({
 
 export const updateTeamRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => updateRoleSchema.parse(data))
+  .validator((data) => updateRoleSchema.parse(data))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase.rpc("admin_set_role", {
       _user_id: data.user_id,
@@ -97,7 +97,7 @@ const setPermsSchema = z.object({
 
 export const updateTeamPermissions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => setPermsSchema.parse(data))
+  .validator((data) => setPermsSchema.parse(data))
   .handler(async ({ context, data }) => {
     const { error } = await (context.supabase as any).rpc("admin_set_permissions", {
       _user_id: data.user_id,
@@ -111,7 +111,7 @@ const deleteSchema = z.object({ user_id: z.string().uuid() });
 
 export const deleteTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => deleteSchema.parse(data))
+  .validator((data) => deleteSchema.parse(data))
   .handler(async ({ context, data }) => {
     await assertAdmin(context as any);
     if (data.user_id === context.userId) {

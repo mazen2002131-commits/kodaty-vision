@@ -127,6 +127,7 @@ export function useCreateOrder() {
       qty: number;
       priority?: OrderPriority;
       status?: OrderStatus;
+      billing_type?: BillingType;
     }) => {
       const { data: u } = await supabase.auth.getUser();
       const total = input.unit_price * input.qty;
@@ -152,12 +153,33 @@ export function useCreateOrder() {
         unit_cost: input.unit_cost ?? 0,
       });
       if (itemErr) throw itemErr;
+
+      // Auto-create subscription for recurring products
+      if (input.billing_type && input.billing_type !== "one_time") {
+        const starts = new Date();
+        const ends = new Date(starts);
+        if (input.billing_type === "monthly") ends.setMonth(ends.getMonth() + 1);
+        else ends.setFullYear(ends.getFullYear() + 1);
+        const { error: subErr } = await supabase.from("subscriptions").insert({
+          customer_id: input.customer_id,
+          product_id: input.product_id,
+          product_name: input.product_name,
+          starts_at: starts.toISOString(),
+          ends_at: ends.toISOString(),
+          auto_renew: true,
+          status: "active",
+          price: input.unit_price,
+        });
+        if (subErr) throw subErr;
+      }
       return order;
     },
 
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["subscriptions"] });
     },
+
   });
 }
 

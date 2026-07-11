@@ -119,6 +119,7 @@ export function useCreateOrder() {
       product_id: string;
       product_name: string;
       unit_price: number;
+      unit_cost?: number;
       qty: number;
       priority?: OrderPriority;
       status?: OrderStatus;
@@ -144,10 +145,12 @@ export function useCreateOrder() {
         product_name: input.product_name,
         qty: input.qty,
         unit_price: input.unit_price,
+        unit_cost: input.unit_cost ?? 0,
       });
       if (itemErr) throw itemErr;
       return order;
     },
+
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
     },

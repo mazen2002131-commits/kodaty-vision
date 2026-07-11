@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ALL_PERMISSIONS, type PermissionKey } from "@/lib/permissions";
 
 export type AppRole = "admin" | "staff";
 
@@ -8,6 +9,8 @@ type RoleContextValue = {
   isAdmin: boolean;
   isStaff: boolean;
   loading: boolean;
+  permissions: Set<string>;
+  can: (perm: PermissionKey) => boolean;
 };
 
 const RoleContext = createContext<RoleContextValue>({
@@ -15,10 +18,13 @@ const RoleContext = createContext<RoleContextValue>({
   isAdmin: false,
   isStaff: false,
   loading: true,
+  permissions: new Set(),
+  can: () => false,
 });
 
 export function RoleProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
+  const [permissions, setPermissions] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,22 +35,20 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       const { data: userRes } = await supabase.auth.getUser();
       const uid = userRes.user?.id;
       if (!uid) {
-        if (!cancelled) { setRole(null); setLoading(false); }
+        if (!cancelled) { setRole(null); setPermissions(new Set()); setLoading(false); }
         return;
       }
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", uid)
-        .order("role", { ascending: true }); // admin < staff alphabetically
+      const [{ data: rolesData }, { data: permsData }] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", uid),
+        (supabase as any).from("user_permissions").select("permission").eq("user_id", uid),
+      ]);
       if (cancelled) return;
-      const roles = (data ?? []).map(r => r.role as AppRole);
+      const roles = (rolesData ?? []).map(r => r.role as AppRole);
       const resolved: AppRole | null = roles.includes("admin")
         ? "admin"
-        : roles.includes("staff")
-          ? "staff"
-          : null;
+        : roles.includes("staff") ? "staff" : null;
       setRole(resolved);
+      setPermissions(new Set(((permsData ?? []) as { permission: string }[]).map(p => p.permission)));
       setLoading(false);
     };
 
@@ -57,11 +61,14 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     return () => { cancelled = true; sub.subscription.unsubscribe(); };
   }, []);
 
+  const isAdmin = role === "admin";
   const value: RoleContextValue = {
     role,
-    isAdmin: role === "admin",
+    isAdmin,
     isStaff: role === "staff",
     loading,
+    permissions,
+    can: (perm) => isAdmin || permissions.has(perm),
   };
 
   return <RoleContext.Provider value={value}>{children}</RoleContext.Provider>;
@@ -76,3 +83,13 @@ export function AdminOnly({ children, fallback = null }: { children: ReactNode; 
   if (loading) return null;
   return <>{isAdmin ? children : fallback}</>;
 }
+
+export function Can({
+  perm, children, fallback = null,
+}: { perm: PermissionKey; children: ReactNode; fallback?: ReactNode }) {
+  const { can, loading } = useRole();
+  if (loading) return null;
+  return <>{can(perm) ? children : fallback}</>;
+}
+
+export { ALL_PERMISSIONS };

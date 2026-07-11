@@ -8,43 +8,44 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useRole } from "@/lib/roles";
+import type { PermissionKey } from "@/lib/permissions";
 
-type NavItem = { to: string; label: string; icon: any; badge?: number; adminOnly?: boolean };
+type NavItem = { to: string; label: string; icon: any; badge?: number; perm: PermissionKey; adminOnly?: boolean };
 
 const NAV: { section: string; items: NavItem[] }[] = [
   { section: "المساحة", items: [
-    { to: "/", label: "الرئيسية", icon: LayoutDashboard },
-    { to: "/orders", label: "الطلبات", icon: ShoppingCart },
-    { to: "/subscriptions", label: "الاشتراكات", icon: RefreshCw },
-    { to: "/customers", label: "العملاء", icon: Users },
+    { to: "/", label: "الرئيسية", icon: LayoutDashboard, perm: "dashboard" },
+    { to: "/orders", label: "الطلبات", icon: ShoppingCart, perm: "orders" },
+    { to: "/subscriptions", label: "الاشتراكات", icon: RefreshCw, perm: "subscriptions" },
+    { to: "/customers", label: "العملاء", icon: Users, perm: "customers" },
   ]},
   { section: "الكتالوج", items: [
-    { to: "/products", label: "المنتجات", icon: Package },
-    { to: "/licenses", label: "التراخيص والمفاتيح", icon: KeyRound },
-    { to: "/inventory", label: "المخزون", icon: Boxes },
+    { to: "/products", label: "المنتجات", icon: Package, perm: "products" },
+    { to: "/licenses", label: "التراخيص والمفاتيح", icon: KeyRound, perm: "licenses" },
+    { to: "/inventory", label: "المخزون", icon: Boxes, perm: "inventory" },
   ]},
   { section: "الأعمال", items: [
-    { to: "/finance", label: "المالية والمحاسبة", icon: Wallet, adminOnly: true },
-    { to: "/reports", label: "التقارير", icon: FileBarChart, adminOnly: true },
-    { to: "/analytics", label: "الإحصائيات", icon: LineChart, adminOnly: true },
-    { to: "/marketing", label: "التسويق", icon: Megaphone, adminOnly: true },
+    { to: "/finance", label: "المالية والمحاسبة", icon: Wallet, perm: "finance" },
+    { to: "/reports", label: "التقارير", icon: FileBarChart, perm: "reports" },
+    { to: "/analytics", label: "الإحصائيات", icon: LineChart, perm: "analytics" },
+    { to: "/marketing", label: "التسويق", icon: Megaphone, perm: "marketing" },
   ]},
   { section: "العمليات", items: [
-    { to: "/support", label: "الدعم الفني", icon: LifeBuoy },
-    { to: "/tasks", label: "المهام", icon: CheckSquare },
-    { to: "/automation", label: "الأتمتة", icon: Zap, adminOnly: true },
-    { to: "/notifications", label: "الإشعارات", icon: Bell },
-    { to: "/team", label: "الفريق والصلاحيات", icon: ShieldCheck, adminOnly: true },
-    { to: "/settings", label: "الإعدادات", icon: Settings, adminOnly: true },
+    { to: "/support", label: "الدعم الفني", icon: LifeBuoy, perm: "support" },
+    { to: "/tasks", label: "المهام", icon: CheckSquare, perm: "tasks" },
+    { to: "/automation", label: "الأتمتة", icon: Zap, perm: "automation" },
+    { to: "/notifications", label: "الإشعارات", icon: Bell, perm: "notifications" },
+    { to: "/team", label: "الفريق والصلاحيات", icon: ShieldCheck, perm: "team", adminOnly: true },
+    { to: "/settings", label: "الإعدادات", icon: Settings, perm: "settings", adminOnly: true },
   ]},
 ];
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: s => s.location.pathname });
   const [collapsed, setCollapsed] = useState(false);
-  const { isAdmin } = useRole();
+  const { isAdmin, can } = useRole();
   const nav = NAV
-    .map(g => ({ ...g, items: g.items.filter(i => !i.adminOnly || isAdmin) }))
+    .map(g => ({ ...g, items: g.items.filter(i => (i.adminOnly ? isAdmin : can(i.perm))) }))
     .filter(g => g.items.length > 0);
 
   return (

@@ -522,6 +522,7 @@ export type Database = {
           full_name: string
           id: string
           last_sign_in_at: string
+          permissions: string[]
           role: string
         }[]
       }

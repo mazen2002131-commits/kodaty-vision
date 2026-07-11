@@ -7,7 +7,7 @@ import {
   ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, ShoppingBag,
   Clock, CheckCircle2, RefreshCw, AlertTriangle, Plus, Zap, KeyRound,
 } from "lucide-react";
-import { orders, customers, products, subscriptions, salesSeries, categorySplit, formatCurrency, formatNumber, relativeTime, customerById, productById, daysUntil } from "@/lib/mock/data";
+import { useCustomers, useOrders, useProducts, useSubscriptions, formatEGP, avatarColor } from "@/lib/db";
 import { StatusPill, Avatar } from "@/components/app/pills";
 import { cn } from "@/lib/utils";
 
@@ -49,17 +49,53 @@ function Kpi({
 }
 
 function Dashboard() {
-  const todaySales = 24680;
-  const monthSales = 486320;
-  const netProfit = 172450;
-  const projectedProfit = 218900;
-  const newOrders = orders.filter(o => o.status === "new").length;
-  const pendingOrders = orders.filter(o => o.status === "pending").length;
-  const completedOrders = orders.filter(o => o.status === "completed").length;
+  const { data: orders = [] } = useOrders();
+  const { data: customers = [] } = useCustomers();
+  const { data: products = [] } = useProducts();
+  const { data: subscriptions = [] } = useSubscriptions();
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const todaySales = orders.filter(o => new Date(o.created_at) >= startOfToday).reduce((sum, o) => sum + Number(o.total || 0), 0);
+  const monthSales = orders.filter(o => new Date(o.created_at) >= startOfMonth).reduce((sum, o) => sum + Number(o.total || 0), 0);
+  const netProfit = orders.reduce((sum, o) => sum + (o.order_items ?? []).reduce((s, item) => s + ((Number(item.unit_price) - Number(item.unit_cost ?? 0)) * Number(item.qty)), 0), 0);
+  const projectedProfit = Math.round(netProfit * 1.12);
+  const newOrders = orders.filter(o => o.status === "pending").length;
+  const pendingOrders = orders.filter(o => o.status === "processing").length;
+  const completedOrders = orders.filter(o => o.status === "delivered").length;
   const activeSubs = subscriptions.filter(s => s.status === "active").length;
-  const expiringSubs = subscriptions.filter(s => s.status === "expiring");
-  const topProducts = [...products].sort((a, b) => b.sold - a.sold).slice(0, 5);
-  const topCustomers = [...customers].sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 5);
+  const expiringSubs = subscriptions.filter(s => daysUntil(s.ends_at) <= 14 && daysUntil(s.ends_at) >= 0).slice(0, 5);
+
+  const salesSeries = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date(now);
+    d.setDate(now.getDate() - (13 - i));
+    const key = d.toISOString().slice(0, 10);
+    const dayOrders = orders.filter(o => o.created_at.slice(0, 10) === key);
+    return {
+      day: d.toLocaleDateString("ar-EG", { day: "2-digit", month: "short" }),
+      sales: dayOrders.reduce((sum, o) => sum + Number(o.total || 0), 0),
+      profit: dayOrders.reduce((sum, o) => sum + (o.order_items ?? []).reduce((s, item) => s + ((Number(item.unit_price) - Number(item.unit_cost ?? 0)) * Number(item.qty)), 0), 0),
+    };
+  });
+
+  const productStats = new Map<string, { name: string; sold: number; revenue: number }>();
+  orders.forEach(o => (o.order_items ?? []).forEach(item => {
+    const current = productStats.get(item.product_name) ?? { name: item.product_name, sold: 0, revenue: 0 };
+    current.sold += Number(item.qty || 0);
+    current.revenue += Number(item.unit_price || 0) * Number(item.qty || 0);
+    productStats.set(item.product_name, current);
+  }));
+  const topProducts = [...productStats.values()].sort((a, b) => b.sold - a.sold).slice(0, 5);
+
+  const customerTotals = customers.map(c => ({
+    ...c,
+    totalSpent: orders.filter(o => o.customer_id === c.id).reduce((sum, o) => sum + Number(o.total || 0), 0),
+  })).filter(c => c.totalSpent > 0).sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 5);
+
+  const categoryMap = new Map<string, number>();
+  products.forEach(p => categoryMap.set(p.category || "أخرى", (categoryMap.get(p.category || "أخرى") ?? 0) + Number(p.price || 0)));
+  const categorySplit = [...categoryMap.entries()].map(([name, value]) => ({ name, value })).slice(0, 6);
 
   return (
     <div className="space-y-6">
@@ -68,7 +104,7 @@ function Dashboard() {
         <div className="pointer-events-none absolute inset-0 mesh-bg opacity-70" />
         <div className="relative flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="text-xs font-medium uppercase tracking-wider text-primary">مرحباً بعودتك، منال 👋</div>
+            <div className="text-xs font-medium uppercase tracking-wider text-primary">مرحباً بعودتك 👋</div>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight">لوحة القيادة</h1>
             <p className="mt-1 text-sm text-muted-foreground">لمحة شاملة عن أداء مبيعاتك اليوم.</p>
           </div>
@@ -89,10 +125,10 @@ function Dashboard() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Kpi label="مبيعات اليوم" value={formatCurrency(todaySales)} delta={{ v: "+18.4%", up: true }} icon={ShoppingBag} tone="brand" />
-        <Kpi label="مبيعات الشهر" value={formatCurrency(monthSales)} delta={{ v: "+9.2%", up: true }} icon={TrendingUp} tone="info" />
-        <Kpi label="صافي الأرباح" value={formatCurrency(netProfit)} delta={{ v: "+12.7%", up: true }} icon={Wallet} tone="success" />
-        <Kpi label="الأرباح المتوقعة" value={formatCurrency(projectedProfit)} delta={{ v: "−2.1%", up: false }} icon={TrendingUp} tone="warning" />
+        <Kpi label="مبيعات اليوم" value={formatEGP(todaySales)} icon={ShoppingBag} tone="brand" />
+        <Kpi label="مبيعات الشهر" value={formatEGP(monthSales)} icon={TrendingUp} tone="info" />
+        <Kpi label="صافي الأرباح" value={formatEGP(netProfit)} icon={Wallet} tone="success" />
+        <Kpi label="الأرباح المتوقعة" value={formatEGP(projectedProfit)} icon={TrendingUp} tone="warning" />
       </div>
 
       {/* Orders mini-KPI row */}
@@ -165,13 +201,13 @@ function Dashboard() {
           </div>
           <div className="h-72">
             <ResponsiveContainer>
-              <BarChart data={categorySplit} layout="vertical" margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+              <BarChart data={categorySplit.length ? categorySplit : [{ name: "لا توجد بيانات", value: 0 }]} layout="vertical" margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" hide />
                 <YAxis type="category" dataKey="name" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={70} />
                 <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }} />
                 <Bar dataKey="value" radius={[6, 6, 6, 6]}>
-                  {categorySplit.map((_, i) => (
+                  {(categorySplit.length ? categorySplit : [{ name: "لا توجد بيانات", value: 0 }]).map((_, i) => (
                     <Cell key={i} fill={`oklch(${0.72 - i * 0.05} 0.2 ${296 - i * 8})`} />
                   ))}
                 </Bar>
@@ -189,9 +225,10 @@ function Dashboard() {
             <Link to="/products" className="text-xs text-primary hover:underline">عرض الكل</Link>
           </div>
           <ul className="space-y-3">
+            {topProducts.length === 0 && <li className="py-8 text-center text-sm text-muted-foreground">لا توجد منتجات مباعة بعد</li>}
             {topProducts.map((p, i) => (
-              <li key={p.id} className="flex items-center gap-3">
-                <div className="grid h-9 w-9 place-items-center rounded-lg bg-surface-sunken text-lg">{p.icon}</div>
+              <li key={p.name} className="flex items-center gap-3">
+                <div className="grid h-9 w-9 place-items-center rounded-lg bg-surface-sunken text-lg">📦</div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{p.name}</div>
                   <div className="text-xs text-muted-foreground num">{formatNumber(p.sold)} عملية بيع</div>
@@ -208,15 +245,16 @@ function Dashboard() {
             <Link to="/customers" className="text-xs text-primary hover:underline">عرض الكل</Link>
           </div>
           <ul className="space-y-3">
-            {topCustomers.map(c => (
+            {customerTotals.length === 0 && <li className="py-8 text-center text-sm text-muted-foreground">لا توجد مشتريات للعملاء بعد</li>}
+            {customerTotals.map(c => (
               <li key={c.id}>
                 <Link to="/customers/$id" params={{ id: c.id }} className="flex items-center gap-3 rounded-lg -mx-2 px-2 py-1 hover:bg-accent/40">
-                  <Avatar name={c.name} color={c.avatarColor} size={36} />
+                  <Avatar name={c.name} color={avatarColor(c.name)} size={36} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{c.name}</div>
-                    <div className="text-xs text-muted-foreground">{c.country}</div>
+                    <div className="text-xs text-muted-foreground">{c.email || "عميل"}</div>
                   </div>
-                  <div className="text-xs font-semibold num">{formatCurrency(c.totalSpent)}</div>
+                  <div className="text-xs font-semibold num">{formatEGP(c.totalSpent)}</div>
                 </Link>
               </li>
             ))}
@@ -233,17 +271,15 @@ function Dashboard() {
           ) : (
             <ul className="space-y-3">
               {expiringSubs.map(s => {
-                const c = customerById(s.customerId);
-                const p = productById(s.productId);
-                const d = daysUntil(s.endAt);
+                const d = daysUntil(s.ends_at);
                 return (
                   <li key={s.id} className="flex items-center gap-3">
                     <div className="grid h-9 w-9 place-items-center rounded-lg bg-warning/10">
                       <AlertTriangle className="h-4 w-4 text-warning" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{c.name}</div>
-                      <div className="truncate text-xs text-muted-foreground">{p.name}</div>
+                      <div className="truncate text-sm font-medium">{s.customers?.name || "عميل"}</div>
+                      <div className="truncate text-xs text-muted-foreground">{s.product_name}</div>
                     </div>
                     <div className="text-xs font-medium text-warning num">{d} يوم</div>
                   </li>
@@ -276,9 +312,12 @@ function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {orders.slice(0, 8).map(o => {
-                const c = customerById(o.customerId);
-                const p = productById(o.productId);
+              {orders.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-10 text-center text-sm text-muted-foreground">لا توجد طلبات حالياً — ابدأ بإضافة بياناتك الحقيقية.</td>
+                </tr>
+              ) : orders.slice(0, 8).map(o => {
+                const firstItem = o.order_items?.[0];
                 return (
                   <tr key={o.id} className="border-b border-border/60 last:border-0 hover:bg-accent/30">
                     <td className="px-5 py-3">
@@ -286,14 +325,14 @@ function Dashboard() {
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
-                        <Avatar name={c.name} color={c.avatarColor} size={24} />
-                        <span className="truncate">{c.name}</span>
+                        <Avatar name={o.customers?.name || "عميل"} color={avatarColor(o.customers?.name || o.id)} size={24} />
+                        <span className="truncate">{o.customers?.name || "عميل"}</span>
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-muted-foreground">{p.icon} <span className="truncate">{p.name}</span></td>
+                    <td className="px-3 py-3 text-muted-foreground">📦 <span className="truncate">{firstItem?.product_name || "—"}</span></td>
                     <td className="px-3 py-3"><StatusPill status={o.status} /></td>
-                    <td className="px-3 py-3 num font-medium">{formatCurrency(o.amount)}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{relativeTime(o.createdAt)}</td>
+                    <td className="px-3 py-3 num font-medium">{formatEGP(Number(o.total || 0))}</td>
+                    <td className="px-5 py-3 text-muted-foreground">{relativeTime(o.created_at)}</td>
                   </tr>
                 );
               })}
@@ -303,4 +342,23 @@ function Dashboard() {
       </div>
     </div>
   );
+}
+
+function formatNumber(n: number): string {
+  return new Intl.NumberFormat("ar-EG").format(n);
+}
+
+function daysUntil(date: string): number {
+  const diff = new Date(date).getTime() - Date.now();
+  return Math.ceil(diff / 86_400_000);
+}
+
+function relativeTime(date: string): string {
+  const diff = Date.now() - new Date(date).getTime();
+  const minutes = Math.max(1, Math.round(diff / 60_000));
+  if (minutes < 60) return `منذ ${minutes} دقيقة`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `منذ ${hours} ساعة`;
+  const days = Math.round(hours / 24);
+  return `منذ ${days} يوم`;
 }

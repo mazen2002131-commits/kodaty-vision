@@ -1,10 +1,10 @@
 import { Bell, Search, Plus, LogOut, User as UserIcon, Sun, Moon, Keyboard, Shield } from "lucide-react";
 import { useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { notifications, relativeTime } from "@/lib/mock/data";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/lib/theme";
 import { useRole } from "@/lib/roles";
+import { useLicenses, useOrders, useSubscriptions, useTickets } from "@/lib/db";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuTrigger,
   DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel,
@@ -29,6 +29,37 @@ export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
   const { resolved, toggle } = useTheme();
   const { role, isAdmin } = useRole();
   const [profile, setProfile] = useState<{ name: string; email: string; initial: string }>({ name: "…", email: "", initial: "؟" });
+  const { data: orders = [] } = useOrders();
+  const { data: tickets = [] } = useTickets();
+  const { data: subscriptions = [] } = useSubscriptions();
+  const { data: licenses = [] } = useLicenses();
+
+  const notifications = [
+    ...orders.filter(o => o.status === "pending").slice(0, 3).map(o => ({
+      id: `order-${o.id}`,
+      title: "طلب جديد بانتظار المعالجة",
+      body: `${o.code} — ${o.customers?.name || "عميل"}`,
+      at: o.created_at,
+    })),
+    ...tickets.filter(t => t.status === "open").slice(0, 3).map(t => ({
+      id: `ticket-${t.id}`,
+      title: "تذكرة دعم مفتوحة",
+      body: t.subject,
+      at: t.created_at,
+    })),
+    ...subscriptions.filter(s => daysUntil(s.ends_at) <= 7 && daysUntil(s.ends_at) >= 0).slice(0, 3).map(s => ({
+      id: `sub-${s.id}`,
+      title: "اشتراك يقترب من الانتهاء",
+      body: `${s.product_name} — ${s.customers?.name || "عميل"}`,
+      at: s.ends_at,
+    })),
+    ...licenses.filter(l => l.status === "available").slice(0, 2).map(l => ({
+      id: `license-${l.id}`,
+      title: "مفتاح متاح في الخزنة",
+      body: l.product_name,
+      at: l.created_at,
+    })),
+  ];
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -111,6 +142,9 @@ export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
                 <button className="text-xs text-primary hover:underline">تحديد الكل كمقروء</button>
               </div>
               <ul className="max-h-96 overflow-y-auto">
+                {notifications.length === 0 && (
+                  <li className="p-6 text-center text-sm text-muted-foreground">لا توجد إشعارات حالياً</li>
+                )}
                 {notifications.map(n => (
                   <li key={n.id} className="border-b border-border/60 p-3 last:border-b-0 hover:bg-accent/40">
                     <div className="flex items-start gap-3">
@@ -162,4 +196,18 @@ export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
       </div>
     </header>
   );
+}
+
+function daysUntil(date: string): number {
+  return Math.ceil((new Date(date).getTime() - Date.now()) / 86_400_000);
+}
+
+function relativeTime(date: string): string {
+  const diff = Date.now() - new Date(date).getTime();
+  const minutes = Math.max(1, Math.round(Math.abs(diff) / 60_000));
+  if (minutes < 60) return diff < 0 ? `خلال ${minutes} دقيقة` : `منذ ${minutes} دقيقة`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return diff < 0 ? `خلال ${hours} ساعة` : `منذ ${hours} ساعة`;
+  const days = Math.round(hours / 24);
+  return diff < 0 ? `خلال ${days} يوم` : `منذ ${days} يوم`;
 }

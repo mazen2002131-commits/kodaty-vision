@@ -9,25 +9,15 @@ export const Route = createFileRoute("/_app/marketing")({
   head: () => ({ meta: [{ title: "التسويق — Kodaty" }] }),
 });
 
-const campaigns = [
-  { name: "عرض نهاية العام", channel: "واتساب", reach: 1240, orders: 87, revenue: 42350, status: "نشطة" },
-  { name: "خصم Adobe للطلاب", channel: "فيسبوك", reach: 3420, orders: 156, revenue: 62800, status: "نشطة" },
-  { name: "حزمة أوفيس Family", channel: "إنستقرام", reach: 890, orders: 41, revenue: 18700, status: "منتهية" },
-  { name: "تخفيضات Streaming", channel: "تيك توك", reach: 2100, orders: 98, revenue: 24600, status: "نشطة" },
-];
+type Campaign = { name: string; channel: string; reach: number; orders: number; revenue: number; status: string };
+type Coupon = { code: string; discount: string; uses: number; cap: number; expires: string };
+type Referral = { name: string; refs: number; earned: number; tier: string };
 
-const coupons = [
-  { code: "WELCOME10", discount: "10%", uses: 234, cap: 500, expires: "2026-12-31" },
-  { code: "STUDENT25", discount: "25%", uses: 89, cap: 200, expires: "2026-08-15" },
-  { code: "VIP50", discount: "50 ج.م", uses: 42, cap: 100, expires: "2026-07-30" },
-  { code: "SUMMER15", discount: "15%", uses: 178, cap: 300, expires: "2026-09-01" },
-];
+const campaigns: Campaign[] = [];
 
-const referrals = [
-  { name: "أحمد المصري", refs: 12, earned: 1200, tier: "ذهبي" },
-  { name: "سارة عبدالله", refs: 8, earned: 800, tier: "فضي" },
-  { name: "محمد فؤاد", refs: 5, earned: 500, tier: "فضي" },
-];
+const coupons: Coupon[] = [];
+
+const referrals: Referral[] = [];
 
 function Marketing() {
   const [copied, setCopied] = useState<string | null>(null);
@@ -73,6 +63,9 @@ function Marketing() {
             <div className="text-center">إيراد</div>
             <div>الحالة</div>
           </div>
+          {campaigns.length === 0 && (
+            <div className="px-5 py-10 text-center text-sm text-muted-foreground">لا توجد حملات حالياً</div>
+          )}
           {campaigns.map(c => (
             <div key={c.name} className="grid grid-cols-[1fr_90px_80px_90px_120px_80px] gap-4 border-b border-border/60 px-5 py-3.5 items-center text-sm hover:bg-surface-soft transition">
               <div className="font-medium">{c.name}</div>
@@ -95,6 +88,9 @@ function Marketing() {
             <button className="text-xs text-brand-600 hover:underline">إضافة</button>
           </div>
           <div className="space-y-2">
+            {coupons.length === 0 && (
+              <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">لا توجد أكواد خصم حالياً</div>
+            )}
             {coupons.map(c => (
               <div key={c.code} className="rounded-xl border border-border p-3 hover:border-brand-500/40 transition">
                 <div className="flex items-center justify-between">
@@ -119,6 +115,9 @@ function Marketing() {
       <div className="surface-elevated p-5">
         <h3 className="text-sm font-medium mb-4">نظام الإحالة — أفضل السفراء</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {referrals.length === 0 && (
+            <div className="md:col-span-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">لا توجد إحالات حالياً</div>
+          )}
           {referrals.map((r, i) => (
             <div key={r.name} className="rounded-xl border border-border p-4">
               <div className="flex items-center justify-between mb-3">

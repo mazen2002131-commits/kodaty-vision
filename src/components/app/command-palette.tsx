@@ -1,12 +1,14 @@
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { useNavigate } from "@tanstack/react-router";
 import { ShoppingCart, Users, Package, KeyRound, RefreshCw, Wallet, Zap, Plus, Home, LineChart } from "lucide-react";
-import { customers, orders, products } from "@/lib/mock/data";
+import { useCustomers, useOrders } from "@/lib/db";
 
 interface Props { open: boolean; onOpenChange: (v: boolean) => void }
 
 export function CommandPalette({ open, onOpenChange }: Props) {
   const navigate = useNavigate();
+  const { data: orders = [] } = useOrders();
+  const { data: customers = [] } = useCustomers();
   const go = (to: string) => { onOpenChange(false); navigate({ to }); };
 
   return (
@@ -42,7 +44,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
             <CommandItem key={o.id} onSelect={() => go(`/orders/${o.id}`)}>
               <ShoppingCart className="me-2 h-4 w-4" />
               <span className="num me-2 text-muted-foreground">{o.code}</span>
-              <span className="truncate">{products.find(p => p.id === o.productId)?.name}</span>
+              <span className="truncate">{o.order_items?.[0]?.product_name || o.customers?.name || "طلب"}</span>
             </CommandItem>
           ))}
         </CommandGroup>

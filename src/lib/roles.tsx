@@ -48,7 +48,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
         ? "admin"
         : roles.includes("staff") ? "staff" : null;
       setRole(resolved);
-      setPermissions(new Set((permsData ?? []).map(p => p.permission as string)));
+      setPermissions(new Set(((permsData ?? []) as { permission: string }[]).map(p => p.permission)));
       setLoading(false);
     };
 

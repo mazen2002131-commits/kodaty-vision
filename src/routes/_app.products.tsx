@@ -19,17 +19,23 @@ function Products() {
   const { data: products = [], isLoading } = useProducts();
   const create = useCreateProduct();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", category: "", price: "" });
+  const [form, setForm] = useState({ name: "", category: "", price: "", cost_price: "" });
 
   async function submit() {
     if (!form.name || !form.price) { toast.error("املأ الاسم والسعر"); return; }
     try {
-      await create.mutateAsync({ name: form.name, category: form.category || undefined, price: Number(form.price) });
+      await create.mutateAsync({
+        name: form.name,
+        category: form.category || undefined,
+        price: Number(form.price),
+        cost_price: form.cost_price ? Number(form.cost_price) : 0,
+      });
       toast.success("تمت الإضافة");
       setOpen(false);
-      setForm({ name: "", category: "", price: "" });
+      setForm({ name: "", category: "", price: "", cost_price: "" });
     } catch (e: any) { toast.error(e.message ?? "فشل"); }
   }
+
 
   const grouped = products.reduce<Record<string, typeof products>>((acc, p) => {
     const k = p.category ?? "عام";

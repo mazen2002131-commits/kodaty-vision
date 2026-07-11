@@ -85,7 +85,7 @@ function Finance() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label="إجمالي الإيرادات" value={formatCurrency(totalRevenue)} delta={{ v: "+14.2%", up: true }} icon={Wallet} tone="brand" />
         <Kpi label="صافي الأرباح" value={formatCurrency(profit)} delta={{ v: "+9.8%", up: true }} icon={TrendingUp} tone="success" />
-        <Kpi label="إجمالي المصروفات" value={formatCurrency(totalCost)} delta={{ v: "+3.4%", up: false }} icon: /* @ts-ignore */ ={TrendingDown as any} tone="warning" />
+        <Kpi label="إجمالي المصروفات" value={formatCurrency(totalCost)} delta={{ v: "+3.4%", up: false }} icon={TrendingDown} tone="warning" />
         <Kpi label="فواتير غير مدفوعة" value={formatCurrency(unpaid)} delta={{ v: "5 فواتير", up: false }} icon={Receipt} tone="info" />
       </div>
 

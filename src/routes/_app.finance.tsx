@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Download, Plus, CreditCard, Receipt, Landmark } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Download, Plus, Receipt, BookOpen } from "lucide-react";
 import { orders, customers, formatCurrency, salesSeries, paymentLabels, customerById, productById, relativeTime } from "@/lib/mock/data";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/app/pills";

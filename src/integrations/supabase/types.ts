@@ -14,6 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      automation_runs: {
+        Row: {
+          automation_id: string
+          created_at: string
+          error: string | null
+          id: string
+          result: Json | null
+          status: string
+          trigger_data: Json | null
+        }
+        Insert: {
+          automation_id: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          result?: Json | null
+          status: string
+          trigger_data?: Json | null
+        }
+        Update: {
+          automation_id?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          result?: Json | null
+          status?: string
+          trigger_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_runs_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automations: {
+        Row: {
+          actions: Json
+          active: boolean
+          config: Json
+          created_at: string
+          description: string | null
+          id: string
+          last_run_at: string | null
+          name: string
+          runs_count: number
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          actions?: Json
+          active?: boolean
+          config?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          last_run_at?: string | null
+          name: string
+          runs_count?: number
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json
+          active?: boolean
+          config?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          last_run_at?: string | null
+          name?: string
+          runs_count?: number
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           company: string | null

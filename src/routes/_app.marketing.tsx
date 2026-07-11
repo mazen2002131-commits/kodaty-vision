@@ -9,14 +9,15 @@ export const Route = createFileRoute("/_app/marketing")({
   head: () => ({ meta: [{ title: "التسويق — Kodaty" }] }),
 });
 
-const campaigns = [
-];
+type Campaign = { name: string; channel: string; reach: number; orders: number; revenue: number; status: string };
+type Coupon = { code: string; discount: string; uses: number; cap: number; expires: string };
+type Referral = { name: string; refs: number; earned: number; tier: string };
 
-const coupons = [
-];
+const campaigns: Campaign[] = [];
 
-const referrals = [
-];
+const coupons: Coupon[] = [];
+
+const referrals: Referral[] = [];
 
 function Marketing() {
   const [copied, setCopied] = useState<string | null>(null);

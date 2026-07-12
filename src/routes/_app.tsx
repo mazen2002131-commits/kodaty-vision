@@ -10,6 +10,7 @@ import { useTheme } from "@/lib/theme";
 import { Loader2 } from "lucide-react";
 import { RoleProvider } from "@/lib/roles";
 import { useRealtimeInvalidate } from "@/lib/realtime";
+import { useIdleLogout } from "@/lib/idle-logout";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -37,6 +38,7 @@ function AppLayout() {
   const [state, setState] = useState<SessionState>("loading");
   const { toggle: toggleTheme } = useTheme();
   const gPressedAt = useRef<number>(0);
+  useIdleLogout(state === "authed");
 
   useEffect(() => {
     let cancelled = false;

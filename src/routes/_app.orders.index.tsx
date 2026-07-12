@@ -141,20 +141,45 @@ function NewOrderButton() {
   const { data: customers = [] } = useCustomers();
   const { data: products = [] } = useProducts();
   const create = useCreateOrder();
+  const createCustomer = useCreateCustomer();
   const [form, setForm] = useState({
-    customer_id: "", product_id: "", qty: 1,
+    customer_name: "", customer_email: "", customer_phone: "",
+    product_id: "", qty: 1,
     priority: "normal" as OrderPriority, status: "pending" as OrderStatus,
   });
 
   const product = products.find(p => p.id === form.product_id);
   const total = product ? Number(product.price) * form.qty : 0;
 
+  const trimmedName = form.customer_name.trim();
+  const matched = trimmedName
+    ? customers.find(c => c.name.trim().toLowerCase() === trimmedName.toLowerCase())
+    : null;
+
+  // Suggest up to 5 close matches while typing
+  const suggestions = useMemo(() => {
+    if (!trimmedName || matched) return [];
+    const q = trimmedName.toLowerCase();
+    return customers.filter(c => c.name.toLowerCase().includes(q)).slice(0, 5);
+  }, [customers, trimmedName, matched]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.customer_id || !product) return;
+    if (!trimmedName || !product) return;
     try {
+      let customerId = matched?.id;
+      if (!customerId) {
+        const created = await createCustomer.mutateAsync({
+          name: trimmedName,
+          email: form.customer_email.trim() || undefined,
+          phone: form.customer_phone.trim() || undefined,
+        });
+        customerId = created.id;
+        toast.success(`تم إضافة عميل جديد: ${trimmedName}`);
+      }
+
       await create.mutateAsync({
-        customer_id: form.customer_id,
+        customer_id: customerId!,
         product_id: product.id,
         product_name: product.name,
         unit_price: Number(product.price),
@@ -170,7 +195,10 @@ function NewOrderButton() {
           : "تم إنشاء الطلب"
       );
 
-      setForm({ customer_id: "", product_id: "", qty: 1, priority: "normal", status: "pending" });
+      setForm({
+        customer_name: "", customer_email: "", customer_phone: "",
+        product_id: "", qty: 1, priority: "normal", status: "pending",
+      });
       setOpen(false);
     } catch (err) {
       toast.error("تعذّر الإنشاء", { description: (err as Error).message });
@@ -187,13 +215,65 @@ function NewOrderButton() {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader><DialogTitle>إنشاء طلب جديد</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-3">
-          <Field label="العميل *">
-            <select required value={form.customer_id} onChange={e => setForm({ ...form, customer_id: e.target.value })} className={input}>
-              <option value="">اختر عميلاً…</option>
-              {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            {customers.length === 0 && <p className="text-xs text-muted-foreground">أضف عميلاً أولاً من صفحة العملاء.</p>}
+          <Field label="اسم العميل *">
+            <input
+              required
+              value={form.customer_name}
+              onChange={e => setForm({ ...form, customer_name: e.target.value })}
+              placeholder="اكتب اسم العميل…"
+              className={input}
+              autoComplete="off"
+              list="orders-customer-suggestions"
+            />
+            <datalist id="orders-customer-suggestions">
+              {customers.map(c => <option key={c.id} value={c.name} />)}
+            </datalist>
+            {trimmedName && (
+              matched ? (
+                <p className="text-xs text-emerald-600">✓ عميل موجود — سيُستخدم حسابه مباشرة</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  عميل جديد — سيتم إنشاؤه تلقائياً
+                  {suggestions.length > 0 && (
+                    <> · هل تقصد:{" "}
+                      {suggestions.map((s, i) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          className="text-primary hover:underline"
+                          onClick={() => setForm({ ...form, customer_name: s.name })}
+                        >
+                          {s.name}{i < suggestions.length - 1 ? "، " : ""}
+                        </button>
+                      ))}
+                      ؟
+                    </>
+                  )}
+                </p>
+              )
+            )}
           </Field>
+          {trimmedName && !matched && (
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="إيميل (اختياري)">
+                <input
+                  type="email"
+                  value={form.customer_email}
+                  onChange={e => setForm({ ...form, customer_email: e.target.value })}
+                  className={input}
+                  placeholder="name@example.com"
+                />
+              </Field>
+              <Field label="جوال (اختياري)">
+                <input
+                  value={form.customer_phone}
+                  onChange={e => setForm({ ...form, customer_phone: e.target.value })}
+                  className={input}
+                  placeholder="+20…"
+                />
+              </Field>
+            </div>
+          )}
           <Field label="المنتج *">
             <select required value={form.product_id} onChange={e => setForm({ ...form, product_id: e.target.value })} className={input}>
               <option value="">اختر منتجاً…</option>

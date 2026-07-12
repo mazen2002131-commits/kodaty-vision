@@ -131,19 +131,24 @@ export function useCreateOrder() {
       starts_at?: string;
       ends_at?: string;
       duration_months?: number;
+      payment_method?: string | null;
+      order_date?: string;
     }) => {
       const { data: u } = await supabase.auth.getUser();
       const total = input.unit_price * input.qty;
+      const insertPayload: any = {
+        code: "",
+        customer_id: input.customer_id,
+        status: input.status ?? "pending",
+        priority: input.priority ?? "normal",
+        total,
+        created_by: u.user?.id,
+        payment_method: input.payment_method ?? null,
+      };
+      if (input.order_date) insertPayload.created_at = new Date(input.order_date).toISOString();
       const { data: order, error } = await supabase
         .from("orders")
-        .insert({
-          code: "",
-          customer_id: input.customer_id,
-          status: input.status ?? "pending",
-          priority: input.priority ?? "normal",
-          total,
-          created_by: u.user?.id,
-        })
+        .insert(insertPayload)
         .select()
         .single();
       if (error) throw error;

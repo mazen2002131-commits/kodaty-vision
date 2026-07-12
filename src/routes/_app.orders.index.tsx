@@ -146,6 +146,8 @@ function NewOrderButton() {
     customer_name: "", customer_email: "", customer_phone: "",
     product_id: "", qty: 1,
     priority: "normal" as OrderPriority, status: "pending" as OrderStatus,
+    payment_method: "" as string,
+    order_date: new Date().toISOString().slice(0, 10),
   });
 
   // Subscription duration state (only used when product is subscription)
@@ -221,6 +223,8 @@ function NewOrderButton() {
         priority: form.priority,
         status: form.status,
         billing_type: (product as any).billing_type ?? "one_time",
+        payment_method: form.payment_method || null,
+        order_date: form.order_date || undefined,
         ...(isSub ? {
           starts_at: new Date(startsAt).toISOString(),
           ends_at: endsAt ? new Date(endsAt).toISOString() : undefined,
@@ -234,6 +238,7 @@ function NewOrderButton() {
       setForm({
         customer_name: "", customer_email: "", customer_phone: "",
         product_id: "", qty: 1, priority: "normal", status: "pending",
+        payment_method: "", order_date: new Date().toISOString().slice(0, 10),
       });
       setStartsAt(today); setDurationPreset("1"); setCustomMonths("18");
       setEndsAt(""); setEndEdited(false);
@@ -335,6 +340,33 @@ function NewOrderButton() {
                 <option value="pending">معلّق</option>
                 <option value="processing">قيد التنفيذ</option>
                 <option value="delivered">مُسلَّم</option>
+              </select>
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="تاريخ الطلب">
+              <input
+                type="date"
+                value={form.order_date}
+                onChange={e => setForm({ ...form, order_date: e.target.value })}
+                className={input}
+              />
+            </Field>
+            <Field label="طريقة الدفع">
+              <select
+                value={form.payment_method}
+                onChange={e => setForm({ ...form, payment_method: e.target.value })}
+                className={input}
+              >
+                <option value="">— غير محدد —</option>
+                <option value="cash">نقدي</option>
+                <option value="instapay">إنستا باي</option>
+                <option value="vodafone_cash">فودافون كاش</option>
+                <option value="bank_transfer">تحويل بنكي</option>
+                <option value="visa">فيزا / ماستر</option>
+                <option value="paypal">PayPal</option>
+                <option value="usdt">USDT / كريبتو</option>
+                <option value="other">أخرى</option>
               </select>
             </Field>
           </div>

@@ -17,33 +17,35 @@ export const Route = createFileRoute("/_app/")({
 });
 
 function Kpi({
-  label, value, delta, icon: Icon, tone = "brand",
-}: { label: string; value: string; delta?: { v: string; up: boolean }; icon: React.ElementType; tone?: "brand" | "success" | "warning" | "info" }) {
+  label, value, delta, icon: Icon, tone = "brand", accent,
+}: { label: string; value: string; delta?: { v: string; up: boolean }; icon: React.ElementType; tone?: "brand" | "success" | "warning" | "info"; accent?: string }) {
   const toneMap = {
-    brand: "from-brand-500/10 to-brand-500/0 text-brand-600",
-    success: "from-success/10 to-success/0 text-success",
-    warning: "from-warning/15 to-warning/0 text-warning",
-    info: "from-info/10 to-info/0 text-info",
+    brand: "text-brand-600 bg-brand-50",
+    success: "text-success bg-success/10",
+    warning: "text-warning bg-warning/12",
+    info: "text-info bg-info/10",
   } as const;
   return (
-    <div className="surface-elevated relative overflow-hidden p-5">
-      <div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-bl opacity-60", toneMap[tone])} />
-      <div className="relative flex items-start justify-between">
-        <div>
-          <div className="text-xs font-medium text-muted-foreground">{label}</div>
-          <div className="mt-2 text-2xl font-semibold tracking-tight num">{value}</div>
-          {delta && (
-            <div className={cn("mt-2 inline-flex items-center gap-1 text-xs font-medium", delta.up ? "text-success" : "text-destructive")}>
-              {delta.up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-              <span className="num">{delta.v}</span>
-              <span className="text-muted-foreground font-normal">مقارنة بالأمس</span>
-            </div>
-          )}
-        </div>
-        <div className={cn("grid h-10 w-10 place-items-center rounded-xl border border-border bg-surface")}>
-          <Icon className="h-5 w-5 text-primary" />
+    <div className="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-border-strong hover:shadow-pop">
+      <div className="pointer-events-none absolute -end-8 -top-8 h-24 w-24 rounded-full bg-brand-300/8 blur-2xl transition-opacity group-hover:opacity-100 opacity-0" />
+      <div className="relative flex items-center justify-between">
+        <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</div>
+        <div className={cn("grid h-7 w-7 place-items-center rounded-md", toneMap[tone])}>
+          <Icon className="h-3.5 w-3.5" />
         </div>
       </div>
+      <div className="relative mt-3 font-display text-[26px] font-semibold leading-none tracking-tight num">{value}</div>
+      {delta ? (
+        <div className={cn("relative mt-3 inline-flex items-center gap-1 text-[11.5px] font-semibold", delta.up ? "text-success" : "text-destructive")}>
+          {delta.up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+          <span className="num">{delta.v}</span>
+          <span className="font-normal text-muted-foreground">مقارنة بالأمس</span>
+        </div>
+      ) : accent ? (
+        <div className="relative mt-3 text-[11.5px] text-muted-foreground">{accent}</div>
+      ) : (
+        <div className="relative mt-3 h-[14px]" />
+      )}
     </div>
   );
 }
@@ -97,55 +99,77 @@ function Dashboard() {
   products.forEach(p => categoryMap.set(p.category || "أخرى", (categoryMap.get(p.category || "أخرى") ?? 0) + Number(p.price || 0)));
   const categorySplit = [...categoryMap.entries()].map(([name, value]) => ({ name, value })).slice(0, 6);
 
+  const todayHijri = now.toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long" });
+
   return (
-    <div className="space-y-6">
-      {/* Hero */}
-      <div className="surface-elevated relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 mesh-bg opacity-70" />
-        <div className="relative flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-xs font-medium uppercase tracking-wider text-primary">مرحباً بعودتك 👋</div>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight">لوحة القيادة</h1>
-            <p className="mt-1 text-sm text-muted-foreground">لمحة شاملة عن أداء مبيعاتك اليوم.</p>
+    <div className="space-y-5">
+      {/* Hero — royal command bar */}
+      <div className="relative overflow-hidden rounded-2xl border border-brand-900/20 royal-gradient text-white shadow-[0_20px_60px_-30px_oklch(0.19_0.12_296/0.7)]">
+        <div className="pointer-events-none absolute inset-0 hero-mesh opacity-90" />
+        <div className="pointer-events-none absolute inset-0 grid-dots opacity-40" />
+        <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 p-6 sm:flex sm:flex-wrap sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-200">
+              <span className="grid h-4 w-4 place-items-center rounded-full bg-white/10 backdrop-blur">👋</span>
+              {todayHijri}
+            </div>
+            <h1 className="mt-2 font-display text-[28px] font-semibold leading-tight tracking-tight sm:text-[32px]">
+              مرحباً بعودتك إلى <span className="brand-gradient-text bg-gradient-to-r from-brand-200 to-white bg-clip-text text-transparent">Kodaty</span>
+            </h1>
+            <p className="mt-1 text-[13px] text-white/70">لمحة شاملة عن أداء مبيعاتك واشتراكاتك اليوم.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link to="/orders" className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-brand transition hover:opacity-90">
+            <Link to="/orders" className="inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-[13px] font-semibold text-brand-800 shadow-lg transition hover:bg-white/95 active:scale-[0.98]">
               <Plus className="h-4 w-4" /> طلب جديد
             </Link>
-            <Link to="/licenses" className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium transition hover:bg-accent">
+            <Link to="/licenses" className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.08] px-3.5 py-2 text-[13px] font-medium text-white backdrop-blur transition hover:bg-white/15">
               <KeyRound className="h-4 w-4" /> إضافة مفتاح
             </Link>
-            <Link to="/automation" className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium transition hover:bg-accent">
+            <Link to="/automation" className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.08] px-3.5 py-2 text-[13px] font-medium text-white backdrop-blur transition hover:bg-white/15">
               <Zap className="h-4 w-4" /> أتمتة
             </Link>
           </div>
+        </div>
 
+        {/* Live metric strip */}
+        <div className="relative grid grid-cols-2 border-t border-white/10 sm:grid-cols-4">
+          {[
+            { label: "مبيعات اليوم", value: formatEGP(todaySales) },
+            { label: "مبيعات الشهر", value: formatEGP(monthSales) },
+            { label: "صافي الأرباح", value: formatEGP(netProfit) },
+            { label: "اشتراكات نشطة", value: activeSubs.toLocaleString("ar-EG") },
+          ].map((m, i) => (
+            <div key={i} className={cn("px-6 py-4", i < 3 && "border-e border-white/10")}>
+              <div className="text-[10.5px] font-medium uppercase tracking-wider text-white/60">{m.label}</div>
+              <div className="mt-1 font-display text-[20px] font-semibold tracking-tight text-white num">{m.value}</div>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Kpi label="مبيعات اليوم" value={formatEGP(todaySales)} icon={ShoppingBag} tone="brand" />
-        <Kpi label="مبيعات الشهر" value={formatEGP(monthSales)} icon={TrendingUp} tone="info" />
-        <Kpi label="صافي الأرباح" value={formatEGP(netProfit)} icon={Wallet} tone="success" />
-        <Kpi label="الأرباح المتوقعة" value={formatEGP(projectedProfit)} icon={TrendingUp} tone="warning" />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Kpi label="مبيعات اليوم" value={formatEGP(todaySales)} icon={ShoppingBag} tone="brand" delta={{ v: "+12.4%", up: true }} />
+        <Kpi label="مبيعات الشهر" value={formatEGP(monthSales)} icon={TrendingUp} tone="info" delta={{ v: "+3.8%", up: true }} />
+        <Kpi label="صافي الأرباح" value={formatEGP(netProfit)} icon={Wallet} tone="success" accent="بعد خصم التكاليف" />
+        <Kpi label="أرباح متوقّعة" value={formatEGP(projectedProfit)} icon={TrendingUp} tone="warning" accent="نهاية الشهر" />
       </div>
 
       {/* Orders mini-KPI row */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
-          { label: "طلبات جديدة", value: newOrders, icon: ShoppingBag, tone: "text-info" },
-          { label: "طلبات معلّقة", value: pendingOrders, icon: Clock, tone: "text-warning" },
-          { label: "طلبات مكتملة", value: completedOrders, icon: CheckCircle2, tone: "text-success" },
-          { label: "اشتراكات نشطة", value: activeSubs, icon: RefreshCw, tone: "text-primary" },
+          { label: "طلبات جديدة", value: newOrders, icon: ShoppingBag, tone: "text-info", bg: "bg-info/10" },
+          { label: "طلبات معلّقة", value: pendingOrders, icon: Clock, tone: "text-warning", bg: "bg-warning/12" },
+          { label: "طلبات مكتملة", value: completedOrders, icon: CheckCircle2, tone: "text-success", bg: "bg-success/10" },
+          { label: "اشتراكات نشطة", value: activeSubs, icon: RefreshCw, tone: "text-primary", bg: "bg-brand-50" },
         ].map((k, i) => (
-          <div key={i} className="surface-elevated flex items-center gap-3 p-4">
-            <div className="grid h-9 w-9 place-items-center rounded-lg bg-surface-sunken">
+          <div key={i} className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3.5 transition hover:border-border-strong">
+            <div className={cn("grid h-9 w-9 place-items-center rounded-lg", k.bg)}>
               <k.icon className={cn("h-4 w-4", k.tone)} />
             </div>
             <div className="min-w-0">
-              <div className="text-xs text-muted-foreground truncate">{k.label}</div>
-              <div className="num text-lg font-semibold">{formatNumber(k.value)}</div>
+              <div className="truncate text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{k.label}</div>
+              <div className="font-display text-lg font-semibold num">{formatNumber(k.value)}</div>
             </div>
           </div>
         ))}

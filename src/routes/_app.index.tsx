@@ -114,7 +114,7 @@ function Dashboard() {
               {todayHijri}
             </div>
             <h1 className="mt-2 font-display text-[28px] font-semibold leading-tight tracking-tight sm:text-[32px]">
-              مرحباً بعودتك إلى <span className="brand-gradient-text">Kodaty</span>
+              مرحباً بعودتك إلى <span className="text-white">Kodaty</span>
             </h1>
             <p className="mt-1 text-[13px] text-white/70">لمحة شاملة عن أداء مبيعاتك واشتراكاتك اليوم.</p>
           </div>

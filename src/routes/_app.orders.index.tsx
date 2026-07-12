@@ -338,6 +338,32 @@ function NewOrderButton() {
               {products.map(p => <option key={p.id} value={p.id}>{p.name} — {formatEGP(Number(p.price))}</option>)}
             </select>
           </Field>
+          {product && (
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="سعر البيع (للوحدة)">
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={form.unit_price}
+                  onChange={e => setForm({ ...form, unit_price: e.target.value, price_edited: true })}
+                  className={input}
+                  placeholder={String(product.price)}
+                />
+              </Field>
+              <Field label="سعر التكلفة (للوحدة)">
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={form.unit_cost}
+                  onChange={e => setForm({ ...form, unit_cost: e.target.value, price_edited: true })}
+                  className={input}
+                  placeholder={String((product as any).cost_price ?? 0)}
+                />
+              </Field>
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-3">
             <Field label="الكمية">
               <input type="number" min={1} value={form.qty} onChange={e => setForm({ ...form, qty: Math.max(1, Number(e.target.value)) })} className={input} />

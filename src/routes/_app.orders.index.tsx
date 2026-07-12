@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Search, Filter, Download, Plus, Loader2, Trash2, Pencil } from "lucide-react";
 
 import {
-  useOrders, useCustomers, useProducts, useCreateOrder, useDeleteOrder,
+  useOrders, useCustomers, useProducts, useCreateOrder, useCreateCustomer, useDeleteOrder,
   avatarColor, formatEGP,
   type OrderStatus, type OrderPriority,
 } from "@/lib/db";

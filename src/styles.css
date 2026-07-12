@@ -314,3 +314,29 @@
   font-weight: 600;
 }
 .dark .num-chip { color: var(--brand-200); background: color-mix(in oklch, var(--brand-300) 18%, transparent); }
+
+/* Standard input styling used across forms */
+@utility input-base {
+  display: block;
+  width: 100%;
+  height: 2.75rem;
+  padding: 0 0.875rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-foreground);
+  font-size: 0.875rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.input-base::placeholder { color: var(--color-muted-foreground); opacity: 0.7; }
+.input-base:hover:not(:disabled) { border-color: var(--brand-300); }
+.input-base:focus,
+.input-base:focus-visible {
+  outline: none;
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--brand-500) 22%, transparent);
+  background: var(--color-background);
+}
+.input-base:disabled { cursor: not-allowed; opacity: 0.6; }
+textarea.input-base { height: auto; padding-top: 0.625rem; padding-bottom: 0.625rem; min-height: 5rem; }
+select.input-base { padding-inline-end: 2rem; }

@@ -146,6 +146,8 @@ function NewOrderButton() {
     customer_name: "", customer_email: "", customer_phone: "",
     product_id: "", qty: 1,
     priority: "normal" as OrderPriority, status: "pending" as OrderStatus,
+    payment_method: "" as string,
+    order_date: new Date().toISOString().slice(0, 10),
   });
 
   // Subscription duration state (only used when product is subscription)

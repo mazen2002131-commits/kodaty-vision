@@ -1,27 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Bell, Palette, Shield, Building, KeyRound, Save, Check } from "lucide-react";
-import { RequireAdmin } from "@/components/app/require-admin";
+import { User, Bell, Palette, Shield, Building, KeyRound, Save, Check, Camera, Loader2, Eye, EyeOff } from "lucide-react";
+import { useRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/_app/settings")({
-  component: () => (<RequireAdmin><Settings /></RequireAdmin>),
+  component: Settings,
   head: () => ({ meta: [{ title: "الإعدادات — Kodaty" }] }),
 });
 
-const tabs = [
-  { id: "profile", label: "الملف الشخصي", icon: User },
-  { id: "workspace", label: "المساحة", icon: Building },
-  { id: "notifications", label: "الإشعارات", icon: Bell },
-  { id: "appearance", label: "المظهر", icon: Palette },
-  { id: "security", label: "الأمان", icon: Shield },
-  { id: "api", label: "مفاتيح API", icon: KeyRound },
+const ALL_TABS = [
+  { id: "profile", label: "الملف الشخصي", icon: User, adminOnly: false },
+  { id: "security", label: "الأمان", icon: Shield, adminOnly: false },
+  { id: "notifications", label: "الإشعارات", icon: Bell, adminOnly: false },
+  { id: "appearance", label: "المظهر", icon: Palette, adminOnly: false },
+  { id: "workspace", label: "المساحة", icon: Building, adminOnly: true },
+  { id: "api", label: "مفاتيح API", icon: KeyRound, adminOnly: true },
 ];
 
 function Settings() {
+  const { isAdmin } = useRole();
+  const tabs = useMemo(() => ALL_TABS.filter(t => isAdmin || !t.adminOnly), [isAdmin]);
   const [tab, setTab] = useState("profile");
-  const [profile, setProfile] = useState({ full_name: "", email: "" });
+  const [userId, setUserId] = useState<string>("");
+  const [profile, setProfile] = useState({ full_name: "", email: "", avatar_url: "" as string | null });
   const [saved, setSaved] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
   const [prefs, setPrefs] = useState({
     email_orders: true, email_tickets: true, email_reports: false,
     push_orders: true, push_tickets: true,
@@ -30,17 +36,51 @@ function Settings() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
-      const { data: p } = await supabase.from("profiles").select("full_name").eq("id", data.user.id).maybeSingle();
-      setProfile({ full_name: p?.full_name || "", email: data.user.email || "" });
+      setUserId(data.user.id);
+      const { data: p } = await supabase.from("profiles").select("full_name, avatar_url").eq("id", data.user.id).maybeSingle();
+      setProfile({ full_name: p?.full_name || "", email: data.user.email || "", avatar_url: p?.avatar_url ?? null });
     });
   }, []);
 
   const save = async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) return;
-    await supabase.from("profiles").update({ full_name: profile.full_name }).eq("id", data.user.id);
+    if (!userId) return;
+    await supabase.from("profiles").update({ full_name: profile.full_name }).eq("id", userId);
     setSaved(true);
     setTimeout(() => setSaved(false), 1800);
+  };
+
+  const onPickFile = () => fileRef.current?.click();
+
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !userId) return;
+    setAvatarError("");
+    if (!file.type.startsWith("image/")) { setAvatarError("الملف يجب أن يكون صورة"); return; }
+    if (file.size > 3 * 1024 * 1024) { setAvatarError("حجم الصورة يجب ألا يتجاوز 3MB"); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+      const path = `${userId}/avatar-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: signed, error: sErr } = await supabase.storage.from("avatars").createSignedUrl(path, 60 * 60 * 24 * 365);
+      if (sErr) throw sErr;
+      const url = signed.signedUrl;
+      const { error: pErr } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", userId);
+      if (pErr) throw pErr;
+      setProfile(p => ({ ...p, avatar_url: url }));
+    } catch (err: any) {
+      setAvatarError(err.message || "فشل رفع الصورة");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeAvatar = async () => {
+    if (!userId) return;
+    await supabase.from("profiles").update({ avatar_url: null }).eq("id", userId);
+    setProfile(p => ({ ...p, avatar_url: null }));
   };
 
   return (
@@ -70,8 +110,45 @@ function Settings() {
 
         <div className="surface-elevated p-6">
           {tab === "profile" && (
-            <div className="space-y-5 max-w-lg">
+            <div className="space-y-6 max-w-lg">
               <h2 className="text-lg font-semibold">الملف الشخصي</h2>
+
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="h-20 w-20 rounded-2xl overflow-hidden brand-gradient grid place-items-center text-white text-2xl font-semibold shadow-brand">
+                    {profile.avatar_url ? (
+                      <img src={profile.avatar_url} alt="avatar" className="h-full w-full object-cover" />
+                    ) : (
+                      (profile.full_name || profile.email || "?").slice(0, 1).toUpperCase()
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onPickFile}
+                    disabled={uploading}
+                    className="absolute -bottom-1 -end-1 h-7 w-7 rounded-full bg-background border border-border grid place-items-center shadow hover:bg-accent transition"
+                    aria-label="تغيير الصورة"
+                  >
+                    {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={onPickFile} disabled={uploading} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-accent">
+                      {uploading ? "جارِ الرفع…" : "رفع صورة"}
+                    </button>
+                    {profile.avatar_url && (
+                      <button type="button" onClick={removeAvatar} className="text-xs px-3 py-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30">
+                        إزالة
+                      </button>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">PNG أو JPG، حتى 3MB.</div>
+                  {avatarError && <div className="text-[11px] text-red-600">{avatarError}</div>}
+                </div>
+                <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFileChange} />
+              </div>
+
               <Field label="الاسم الكامل">
                 <input value={profile.full_name} onChange={e => setProfile({ ...profile, full_name: e.target.value })} className="input-base" />
               </Field>
@@ -121,36 +198,11 @@ function Settings() {
           {tab === "appearance" && (
             <div className="space-y-5 max-w-lg">
               <h2 className="text-lg font-semibold">المظهر</h2>
-              <p className="text-sm text-muted-foreground">الوضع الليلي قادم قريباً — النظام حالياً بمظهر فاتح فاخر.</p>
-              <div className="grid grid-cols-3 gap-3">
-                {["فاتح", "داكن", "تلقائي"].map((m, i) => (
-                  <button key={m} className={`rounded-xl border p-4 text-sm ${i === 0 ? "border-brand-500 brand-gradient-soft text-brand-600 font-medium" : "border-border text-muted-foreground"}`}>
-                    {m}
-                  </button>
-                ))}
-              </div>
+              <p className="text-sm text-muted-foreground">استخدم زر القمر/الشمس في الأعلى لتبديل الوضع.</p>
             </div>
           )}
 
-          {tab === "security" && (
-            <div className="space-y-5 max-w-lg">
-              <h2 className="text-lg font-semibold">الأمان</h2>
-              <div className="rounded-xl border border-border p-4">
-                <div className="text-sm font-medium">كلمة المرور</div>
-                <div className="text-xs text-muted-foreground mt-1">آخر تحديث منذ 3 أشهر</div>
-                <button className="mt-3 text-xs text-brand-600 hover:underline">تغيير كلمة المرور</button>
-              </div>
-              <div className="rounded-xl border border-border p-4">
-                <div className="text-sm font-medium">المصادقة الثنائية</div>
-                <div className="text-xs text-muted-foreground mt-1">إضافة طبقة حماية إضافية</div>
-                <button className="mt-3 text-xs text-brand-600 hover:underline">تفعيل 2FA</button>
-              </div>
-              <div className="rounded-xl border border-border p-4">
-                <div className="text-sm font-medium">حماية كلمات المرور المسربة</div>
-                <div className="text-xs text-success mt-1 flex items-center gap-1"><Check className="h-3 w-3" /> مفعّلة عبر HIBP</div>
-              </div>
-            </div>
-          )}
+          {tab === "security" && <SecurityTab />}
 
           {tab === "api" && (
             <div className="space-y-5 max-w-lg">
@@ -164,6 +216,77 @@ function Settings() {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function SecurityTab() {
+  const [cur, setCur] = useState("");
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  const submit = async () => {
+    setMsg(null);
+    if (pw.length < 8) { setMsg({ type: "err", text: "كلمة المرور يجب ألا تقل عن 8 أحرف" }); return; }
+    if (pw !== pw2) { setMsg({ type: "err", text: "كلمتا المرور غير متطابقتين" }); return; }
+    setBusy(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const email = u.user?.email;
+      if (!email) throw new Error("لا يوجد مستخدم");
+      // Re-verify current password
+      const { error: signErr } = await supabase.auth.signInWithPassword({ email, password: cur });
+      if (signErr) throw new Error("كلمة المرور الحالية غير صحيحة");
+      const { error } = await supabase.auth.updateUser({ password: pw });
+      if (error) throw error;
+      setMsg({ type: "ok", text: "تم تحديث كلمة المرور بنجاح" });
+      setCur(""); setPw(""); setPw2("");
+    } catch (e: any) {
+      setMsg({ type: "err", text: e.message || "فشل تحديث كلمة المرور" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5 max-w-lg">
+      <h2 className="text-lg font-semibold">الأمان</h2>
+      <div className="rounded-xl border border-border p-4 space-y-4">
+        <div>
+          <div className="text-sm font-medium">تغيير كلمة المرور</div>
+          <div className="text-xs text-muted-foreground mt-1">أدخل كلمة المرور الحالية ثم كلمة المرور الجديدة.</div>
+        </div>
+        <Field label="كلمة المرور الحالية">
+          <div className="relative">
+            <input type={show ? "text" : "password"} value={cur} onChange={e => setCur(e.target.value)} className="input-base pe-10" autoComplete="current-password" />
+            <button type="button" onClick={() => setShow(s => !s)} className="absolute inset-y-0 end-2 grid place-items-center text-muted-foreground">
+              {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </Field>
+        <Field label="كلمة المرور الجديدة">
+          <input type={show ? "text" : "password"} value={pw} onChange={e => setPw(e.target.value)} className="input-base" autoComplete="new-password" />
+        </Field>
+        <Field label="تأكيد كلمة المرور الجديدة">
+          <input type={show ? "text" : "password"} value={pw2} onChange={e => setPw2(e.target.value)} className="input-base" autoComplete="new-password" />
+        </Field>
+        {msg && (
+          <div className={`text-xs rounded-lg px-3 py-2 ${msg.type === "ok" ? "bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-400" : "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400"}`}>
+            {msg.text}
+          </div>
+        )}
+        <button onClick={submit} disabled={busy} className="inline-flex items-center gap-2 rounded-xl brand-gradient text-white px-4 py-2 text-sm font-medium shadow-brand disabled:opacity-60">
+          {busy ? <><Loader2 className="h-4 w-4 animate-spin" /> جارٍ التحديث…</> : <><Save className="h-4 w-4" /> تحديث كلمة المرور</>}
+        </button>
+      </div>
+
+      <div className="rounded-xl border border-border p-4">
+        <div className="text-sm font-medium">حماية كلمات المرور المسربة</div>
+        <div className="text-xs text-success mt-1 flex items-center gap-1"><Check className="h-3 w-3" /> مفعّلة عبر HIBP</div>
       </div>
     </div>
   );

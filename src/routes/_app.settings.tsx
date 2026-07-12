@@ -1,24 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Bell, Palette, Shield, Building, KeyRound, Save, Check, Camera, Loader2, Eye, EyeOff } from "lucide-react";
-import { RequireAdmin } from "@/components/app/require-admin";
+import { useRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/_app/settings")({
-  component: () => (<RequireAdmin><Settings /></RequireAdmin>),
+  component: Settings,
   head: () => ({ meta: [{ title: "الإعدادات — Kodaty" }] }),
 });
 
-const tabs = [
-  { id: "profile", label: "الملف الشخصي", icon: User },
-  { id: "workspace", label: "المساحة", icon: Building },
-  { id: "notifications", label: "الإشعارات", icon: Bell },
-  { id: "appearance", label: "المظهر", icon: Palette },
-  { id: "security", label: "الأمان", icon: Shield },
-  { id: "api", label: "مفاتيح API", icon: KeyRound },
+const ALL_TABS = [
+  { id: "profile", label: "الملف الشخصي", icon: User, adminOnly: false },
+  { id: "security", label: "الأمان", icon: Shield, adminOnly: false },
+  { id: "notifications", label: "الإشعارات", icon: Bell, adminOnly: false },
+  { id: "appearance", label: "المظهر", icon: Palette, adminOnly: false },
+  { id: "workspace", label: "المساحة", icon: Building, adminOnly: true },
+  { id: "api", label: "مفاتيح API", icon: KeyRound, adminOnly: true },
 ];
 
 function Settings() {
+  const { isAdmin } = useRole();
+  const tabs = useMemo(() => ALL_TABS.filter(t => isAdmin || !t.adminOnly), [isAdmin]);
   const [tab, setTab] = useState("profile");
   const [userId, setUserId] = useState<string>("");
   const [profile, setProfile] = useState({ full_name: "", email: "", avatar_url: "" as string | null });

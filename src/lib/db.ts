@@ -350,6 +350,39 @@ export function useSubscriptions() {
   });
 }
 
+export function useCreateSubscription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      customer_id: string;
+      product_id?: string | null;
+      product_name: string;
+      price?: number | null;
+      billing_type: "monthly" | "yearly";
+      auto_renew?: boolean;
+      notes?: string | null;
+    }) => {
+      const starts = new Date();
+      const ends = new Date(starts);
+      if (input.billing_type === "monthly") ends.setMonth(ends.getMonth() + 1);
+      else ends.setFullYear(ends.getFullYear() + 1);
+      const { error } = await supabase.from("subscriptions").insert({
+        customer_id: input.customer_id,
+        product_id: input.product_id ?? null,
+        product_name: input.product_name,
+        price: input.price ?? null,
+        auto_renew: input.auto_renew ?? false,
+        status: "active",
+        starts_at: starts.toISOString(),
+        ends_at: ends.toISOString(),
+        notes: input.notes ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["subscriptions"] }),
+  });
+}
+
 // ---------- Licenses ----------
 export type License = {
   id: string;

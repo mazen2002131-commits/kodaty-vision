@@ -223,6 +223,8 @@ function NewOrderButton() {
         priority: form.priority,
         status: form.status,
         billing_type: (product as any).billing_type ?? "one_time",
+        payment_method: form.payment_method || null,
+        order_date: form.order_date || undefined,
         ...(isSub ? {
           starts_at: new Date(startsAt).toISOString(),
           ends_at: endsAt ? new Date(endsAt).toISOString() : undefined,
@@ -236,6 +238,7 @@ function NewOrderButton() {
       setForm({
         customer_name: "", customer_email: "", customer_phone: "",
         product_id: "", qty: 1, priority: "normal", status: "pending",
+        payment_method: "", order_date: new Date().toISOString().slice(0, 10),
       });
       setStartsAt(today); setDurationPreset("1"); setCustomMonths("18");
       setEndsAt(""); setEndEdited(false);

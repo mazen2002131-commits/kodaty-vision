@@ -64,13 +64,15 @@ export function useIdleLogout(enabled: boolean) {
       bump();
     };
 
-    const events: (keyof WindowEventMap)[] = ["mousemove", "keydown", "click", "scroll", "touchstart", "visibilitychange"];
+    const events: (keyof WindowEventMap)[] = ["mousemove", "keydown", "click", "scroll", "touchstart"];
     events.forEach(e => window.addEventListener(e, onActivity, { passive: true }));
+    document.addEventListener("visibilitychange", onActivity);
 
     timerRef.current = window.setInterval(tick, 15_000);
 
     return () => {
       events.forEach(e => window.removeEventListener(e, onActivity));
+      document.removeEventListener("visibilitychange", onActivity);
       if (timerRef.current) window.clearInterval(timerRef.current);
     };
   }, [enabled, navigate]);

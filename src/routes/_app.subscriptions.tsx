@@ -120,9 +120,11 @@ function SubsPage() {
             <Button variant="outline" size="sm" className="gap-1.5">
               <Download className="h-4 w-4" /> تصدير
             </Button>
-            <Button size="sm" className="gap-1.5">
-              <Plus className="h-4 w-4" /> اشتراك جديد
-            </Button>
+            <NewSubDialog>
+              <Button size="sm" className="gap-1.5">
+                <Plus className="h-4 w-4" /> اشتراك جديد
+              </Button>
+            </NewSubDialog>
           </div>
         </div>
       </header>

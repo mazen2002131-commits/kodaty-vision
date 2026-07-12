@@ -148,7 +148,11 @@ function NewOrderButton() {
     priority: "normal" as OrderPriority, status: "pending" as OrderStatus,
     payment_method: "" as string,
     order_date: new Date().toISOString().slice(0, 10),
+    unit_price: "" as string,
+    unit_cost: "" as string,
+    price_edited: false,
   });
+
 
   // Subscription duration state (only used when product is subscription)
   const today = new Date().toISOString().slice(0, 10);

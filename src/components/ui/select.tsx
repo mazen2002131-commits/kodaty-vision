@@ -19,11 +19,15 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-11 w-full items-center justify-between whitespace-nowrap rounded-xl border border-input/70 bg-surface/60 px-3.5 py-2 text-sm text-foreground shadow-[0_1px_0_0_rgba(15,15,35,0.02)] backdrop-blur-sm transition-all duration-200 cursor-pointer",
-      "data-[placeholder]:text-muted-foreground/70",
-      "hover:border-input hover:bg-surface",
-      "focus:outline-none focus:border-primary/60 focus:bg-surface focus:ring-4 focus:ring-primary/10",
-      "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted/40",
+      "flex h-12 w-full items-center justify-between whitespace-nowrap rounded-2xl border border-border/70 bg-white px-4 text-[14px] font-medium text-foreground cursor-pointer",
+      "shadow-[0_1px_2px_rgba(15,15,35,0.04),inset_0_1px_0_rgba(255,255,255,0.6)]",
+      "transition-[border-color,box-shadow,background-color] duration-200",
+      "data-[placeholder]:text-muted-foreground/60 data-[placeholder]:font-normal",
+      "hover:border-foreground/25",
+      "focus:outline-none focus:border-primary focus:ring-4 focus:ring-[color-mix(in_oklch,var(--primary)_18%,transparent)]",
+      "disabled:cursor-not-allowed disabled:opacity-60 disabled:bg-muted/50",
+      "aria-[invalid=true]:border-destructive aria-[invalid=true]:focus:ring-destructive/20",
+      "dark:bg-surface-raised/60 dark:backdrop-blur-sm",
       "[&>span]:line-clamp-1",
       className,
     )}
@@ -31,7 +35,7 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 opacity-50" />
+      <ChevronDown className="h-4 w-4 opacity-60 transition-transform duration-200 data-[state=open]:rotate-180" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));

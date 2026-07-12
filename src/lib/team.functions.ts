@@ -113,12 +113,12 @@ export const deleteTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data) => deleteSchema.parse(data))
   .handler(async ({ context, data }) => {
-    await assertAdmin(context as any);
     if (data.user_id === context.userId) {
       throw new Response("لا يمكنك حذف حسابك", { status: 400 });
     }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
+    const { error } = await context.supabase.rpc("admin_delete_user", {
+      _user_id: data.user_id,
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

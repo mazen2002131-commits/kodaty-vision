@@ -148,8 +148,41 @@ function NewOrderButton() {
     priority: "normal" as OrderPriority, status: "pending" as OrderStatus,
   });
 
+  // Subscription duration state (only used when product is subscription)
+  const today = new Date().toISOString().slice(0, 10);
+  const [startsAt, setStartsAt] = useState(today);
+  const [durationPreset, setDurationPreset] = useState<string>("1");
+  const [customMonths, setCustomMonths] = useState<string>("18");
+  const [endsAt, setEndsAt] = useState("");
+  const [endEdited, setEndEdited] = useState(false);
+
   const product = products.find(p => p.id === form.product_id);
   const total = product ? Number(product.price) * form.qty : 0;
+  const isSub = !!product && (product as any).billing_type && (product as any).billing_type !== "one_time";
+
+  const months = useMemo(() => {
+    if (durationPreset === "custom") return Math.max(1, parseInt(customMonths || "0", 10) || 0);
+    return parseInt(durationPreset, 10);
+  }, [durationPreset, customMonths]);
+
+  // When product changes, seed the duration preset from billing_type
+  useEffect(() => {
+    if (!product) return;
+    const bt = (product as any).billing_type;
+    if (bt === "yearly") setDurationPreset("12");
+    else if (bt === "monthly") setDurationPreset("1");
+    setEndEdited(false);
+  }, [form.product_id]);
+
+  // Auto-compute end date
+  useEffect(() => {
+    if (!isSub) return;
+    if (endEdited) return;
+    if (!startsAt || !months) return;
+    const d = new Date(startsAt);
+    d.setMonth(d.getMonth() + months);
+    setEndsAt(d.toISOString().slice(0, 10));
+  }, [startsAt, months, endEdited, isSub]);
 
   const trimmedName = form.customer_name.trim();
   const matched = trimmedName
@@ -188,17 +221,22 @@ function NewOrderButton() {
         priority: form.priority,
         status: form.status,
         billing_type: (product as any).billing_type ?? "one_time",
+        ...(isSub ? {
+          starts_at: new Date(startsAt).toISOString(),
+          ends_at: endsAt ? new Date(endsAt).toISOString() : undefined,
+          duration_months: months,
+        } : {}),
       });
       toast.success(
-        (product as any).billing_type && (product as any).billing_type !== "one_time"
-          ? "تم إنشاء الطلب والاشتراك"
-          : "تم إنشاء الطلب"
+        isSub ? "تم إنشاء الطلب والاشتراك" : "تم إنشاء الطلب"
       );
 
       setForm({
         customer_name: "", customer_email: "", customer_phone: "",
         product_id: "", qty: 1, priority: "normal", status: "pending",
       });
+      setStartsAt(today); setDurationPreset("1"); setCustomMonths("18");
+      setEndsAt(""); setEndEdited(false);
       setOpen(false);
     } catch (err) {
       toast.error("تعذّر الإنشاء", { description: (err as Error).message });

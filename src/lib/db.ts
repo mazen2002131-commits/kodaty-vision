@@ -128,6 +128,9 @@ export function useCreateOrder() {
       priority?: OrderPriority;
       status?: OrderStatus;
       billing_type?: BillingType;
+      starts_at?: string;
+      ends_at?: string;
+      duration_months?: number;
     }) => {
       const { data: u } = await supabase.auth.getUser();
       const total = input.unit_price * input.qty;
@@ -156,10 +159,18 @@ export function useCreateOrder() {
 
       // Auto-create subscription for recurring products
       if (input.billing_type && input.billing_type !== "one_time") {
-        const starts = new Date();
-        const ends = new Date(starts);
-        if (input.billing_type === "monthly") ends.setMonth(ends.getMonth() + 1);
-        else ends.setFullYear(ends.getFullYear() + 1);
+        const starts = input.starts_at ? new Date(input.starts_at) : new Date();
+        let ends: Date;
+        if (input.ends_at) {
+          ends = new Date(input.ends_at);
+        } else if (input.duration_months && input.duration_months > 0) {
+          ends = new Date(starts);
+          ends.setMonth(ends.getMonth() + input.duration_months);
+        } else {
+          ends = new Date(starts);
+          if (input.billing_type === "monthly") ends.setMonth(ends.getMonth() + 1);
+          else ends.setFullYear(ends.getFullYear() + 1);
+        }
         const { error: subErr } = await supabase.from("subscriptions").insert({
           customer_id: input.customer_id,
           product_id: input.product_id,
@@ -361,11 +372,22 @@ export function useCreateSubscription() {
       billing_type: "monthly" | "yearly";
       auto_renew?: boolean;
       notes?: string | null;
+      starts_at?: string;
+      ends_at?: string;
+      duration_months?: number;
     }) => {
-      const starts = new Date();
-      const ends = new Date(starts);
-      if (input.billing_type === "monthly") ends.setMonth(ends.getMonth() + 1);
-      else ends.setFullYear(ends.getFullYear() + 1);
+      const starts = input.starts_at ? new Date(input.starts_at) : new Date();
+      let ends: Date;
+      if (input.ends_at) {
+        ends = new Date(input.ends_at);
+      } else if (input.duration_months && input.duration_months > 0) {
+        ends = new Date(starts);
+        ends.setMonth(ends.getMonth() + input.duration_months);
+      } else {
+        ends = new Date(starts);
+        if (input.billing_type === "monthly") ends.setMonth(ends.getMonth() + 1);
+        else ends.setFullYear(ends.getFullYear() + 1);
+      }
       const { error } = await supabase.from("subscriptions").insert({
         customer_id: input.customer_id,
         product_id: input.product_id ?? null,

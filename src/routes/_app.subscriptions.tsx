@@ -4,10 +4,16 @@ import {
   RefreshCw, AlertTriangle, CheckCircle2, XCircle, Loader2,
   Search, Filter, Download, Plus, Calendar, TrendingUp, Sparkles,
 } from "lucide-react";
-import { useSubscriptions, formatEGP, daysBetween, avatarColor } from "@/lib/db";
+import { useSubscriptions, useCreateSubscription, useCustomers, useProducts, formatEGP, daysBetween, avatarColor } from "@/lib/db";
 import { Avatar } from "@/components/app/pills";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/subscriptions")({
@@ -114,9 +120,11 @@ function SubsPage() {
             <Button variant="outline" size="sm" className="gap-1.5">
               <Download className="h-4 w-4" /> تصدير
             </Button>
-            <Button size="sm" className="gap-1.5">
-              <Plus className="h-4 w-4" /> اشتراك جديد
-            </Button>
+            <NewSubDialog>
+              <Button size="sm" className="gap-1.5">
+                <Plus className="h-4 w-4" /> اشتراك جديد
+              </Button>
+            </NewSubDialog>
           </div>
         </div>
       </header>
@@ -209,9 +217,11 @@ function SubsPage() {
                 ستظهر هنا الاشتراكات تلقائياً عند بيع منتج بنوع فوترة شهري أو سنوي.
               </div>
             </div>
-            <Button size="sm" className="gap-1.5">
-              <Plus className="h-4 w-4" /> إضافة اشتراك يدوي
-            </Button>
+            <NewSubDialog>
+              <Button size="sm" className="gap-1.5">
+                <Plus className="h-4 w-4" /> إضافة اشتراك يدوي
+              </Button>
+            </NewSubDialog>
           </div>
         </div>
       )}
@@ -390,5 +400,130 @@ function FilterChip({
         {count}
       </span>
     </button>
+  );
+}
+
+function NewSubDialog({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const { data: customers = [] } = useCustomers();
+  const { data: products = [] } = useProducts();
+  const create = useCreateSubscription();
+
+  const [customerId, setCustomerId] = useState("");
+  const [productId, setProductId] = useState<string>("");
+  const [productName, setProductName] = useState("");
+  const [price, setPrice] = useState<string>("");
+  const [billingType, setBillingType] = useState<"monthly" | "yearly">("monthly");
+  const [autoRenew, setAutoRenew] = useState(true);
+  const [notes, setNotes] = useState("");
+
+  function reset() {
+    setCustomerId(""); setProductId(""); setProductName("");
+    setPrice(""); setBillingType("monthly"); setAutoRenew(true); setNotes("");
+  }
+
+  function pickProduct(id: string) {
+    setProductId(id);
+    const p = products.find(pp => pp.id === id);
+    if (p) {
+      setProductName(p.name);
+      setPrice(String(p.price ?? ""));
+      if (p.billing_type === "yearly") setBillingType("yearly");
+      else if (p.billing_type === "monthly") setBillingType("monthly");
+    }
+  }
+
+  async function submit() {
+    if (!customerId) return toast.error("اختر العميل");
+    if (!productName.trim()) return toast.error("أدخل اسم المنتج");
+    try {
+      await create.mutateAsync({
+        customer_id: customerId,
+        product_id: productId || null,
+        product_name: productName.trim(),
+        price: price ? Number(price) : null,
+        billing_type: billingType,
+        auto_renew: autoRenew,
+        notes: notes.trim() || null,
+      });
+      toast.success("تم إنشاء الاشتراك");
+      reset();
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "فشل الإنشاء");
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>اشتراك جديد</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-2">
+          <div className="grid gap-1.5">
+            <Label>العميل</Label>
+            <Select value={customerId} onValueChange={setCustomerId}>
+              <SelectTrigger><SelectValue placeholder="اختر عميل…" /></SelectTrigger>
+              <SelectContent>
+                {customers.map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label>المنتج (اختياري)</Label>
+            <Select value={productId} onValueChange={pickProduct}>
+              <SelectTrigger><SelectValue placeholder="اختر من الكتالوج أو أدخل يدوياً" /></SelectTrigger>
+              <SelectContent>
+                {products.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input placeholder="اسم المنتج" value={productName} onChange={(e) => setProductName(e.target.value)} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label>سعر التجديد (ج.م)</Label>
+              <Input type="number" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>نوع الاشتراك</Label>
+              <Select value={billingType} onValueChange={(v) => setBillingType(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">شهري</SelectItem>
+                  <SelectItem value="yearly">سنوي</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2">
+            <div>
+              <div className="text-sm font-medium">تجديد تلقائي</div>
+              <div className="text-[11px] text-muted-foreground">يتجدد الاشتراك تلقائياً في تاريخ الانتهاء</div>
+            </div>
+            <Switch checked={autoRenew} onCheckedChange={setAutoRenew} />
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label>ملاحظات</Label>
+            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="اختياري" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>
+          <Button onClick={submit} disabled={create.isPending}>
+            {create.isPending ? "جاري الحفظ…" : "إنشاء الاشتراك"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

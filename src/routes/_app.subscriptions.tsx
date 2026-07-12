@@ -433,7 +433,7 @@ function NewSubDialog({ children }: { children: React.ReactNode }) {
   }, [durationPreset, customMonths]);
 
   // Auto-compute end date when start/duration changes (unless user edited manually)
-  useMemo(() => {
+  useEffect(() => {
     if (endEdited) return;
     if (!startsAt || !months) return;
     const d = new Date(startsAt);

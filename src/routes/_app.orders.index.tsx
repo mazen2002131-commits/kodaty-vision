@@ -163,7 +163,9 @@ function NewOrderButton() {
   const [endEdited, setEndEdited] = useState(false);
 
   const product = products.find(p => p.id === form.product_id);
-  const total = product ? Number(product.price) * form.qty : 0;
+  const effectivePrice = form.unit_price !== "" ? Number(form.unit_price) : (product ? Number(product.price) : 0);
+  const effectiveCost = form.unit_cost !== "" ? Number(form.unit_cost) : (product ? Number((product as any).cost_price ?? 0) : 0);
+  const total = effectivePrice * form.qty;
   const isSub = !!product && (product as any).billing_type && (product as any).billing_type !== "one_time";
 
   const months = useMemo(() => {
@@ -171,14 +173,20 @@ function NewOrderButton() {
     return parseInt(durationPreset, 10);
   }, [durationPreset, customMonths]);
 
-  // When product changes, seed the duration preset from billing_type
+  // When product changes, seed the duration preset from billing_type and price fields
   useEffect(() => {
     if (!product) return;
     const bt = (product as any).billing_type;
     if (bt === "yearly") setDurationPreset("12");
     else if (bt === "monthly") setDurationPreset("1");
     setEndEdited(false);
+    setForm(f => f.price_edited ? f : {
+      ...f,
+      unit_price: String(product.price ?? ""),
+      unit_cost: String((product as any).cost_price ?? 0),
+    });
   }, [form.product_id]);
+
 
   // Auto-compute end date
   useEffect(() => {

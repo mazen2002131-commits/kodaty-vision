@@ -30,8 +30,8 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    const load = async () => {
-      setLoading(true);
+    const load = async (isInitial: boolean) => {
+      if (isInitial) setLoading(true);
       const { data: userRes } = await supabase.auth.getUser();
       const uid = userRes.user?.id;
       if (!uid) {
@@ -52,10 +52,12 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     };
 
-    load();
+    load(true);
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
-        load();
+      // Only reload on real identity changes — NOT on TOKEN_REFRESHED / INITIAL_SESSION
+      // which fire on every tab focus and would unmount gated pages (closing open dialogs).
+      if (event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        load(false);
       }
     });
     return () => { cancelled = true; sub.subscription.unsubscribe(); };

@@ -217,9 +217,11 @@ function SubsPage() {
                 ستظهر هنا الاشتراكات تلقائياً عند بيع منتج بنوع فوترة شهري أو سنوي.
               </div>
             </div>
-            <Button size="sm" className="gap-1.5">
-              <Plus className="h-4 w-4" /> إضافة اشتراك يدوي
-            </Button>
+            <NewSubDialog>
+              <Button size="sm" className="gap-1.5">
+                <Plus className="h-4 w-4" /> إضافة اشتراك يدوي
+              </Button>
+            </NewSubDialog>
           </div>
         </div>
       )}

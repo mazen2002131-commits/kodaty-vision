@@ -229,9 +229,10 @@ function NewOrderButton() {
         customer_id: customerId!,
         product_id: product.id,
         product_name: product.name,
-        unit_price: Number(product.price),
-        unit_cost: Number((product as any).cost_price ?? 0),
+        unit_price: effectivePrice,
+        unit_cost: effectiveCost,
         qty: form.qty,
+
         priority: form.priority,
         status: form.status,
         billing_type: (product as any).billing_type ?? "one_time",

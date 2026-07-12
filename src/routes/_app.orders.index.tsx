@@ -343,6 +343,33 @@ function NewOrderButton() {
               </select>
             </Field>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="تاريخ الطلب">
+              <input
+                type="date"
+                value={form.order_date}
+                onChange={e => setForm({ ...form, order_date: e.target.value })}
+                className={input}
+              />
+            </Field>
+            <Field label="طريقة الدفع">
+              <select
+                value={form.payment_method}
+                onChange={e => setForm({ ...form, payment_method: e.target.value })}
+                className={input}
+              >
+                <option value="">— غير محدد —</option>
+                <option value="cash">نقدي</option>
+                <option value="instapay">إنستا باي</option>
+                <option value="vodafone_cash">فودافون كاش</option>
+                <option value="bank_transfer">تحويل بنكي</option>
+                <option value="visa">فيزا / ماستر</option>
+                <option value="paypal">PayPal</option>
+                <option value="usdt">USDT / كريبتو</option>
+                <option value="other">أخرى</option>
+              </select>
+            </Field>
+          </div>
 
           {isSub && (
             <div className="rounded-lg border border-primary/30 bg-primary/[0.04] p-3 space-y-3">

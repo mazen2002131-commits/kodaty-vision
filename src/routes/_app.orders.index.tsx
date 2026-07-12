@@ -243,7 +243,9 @@ function NewOrderButton() {
         customer_name: "", customer_email: "", customer_phone: "",
         product_id: "", qty: 1, priority: "normal", status: "pending",
         payment_method: "", order_date: new Date().toISOString().slice(0, 10),
+        unit_price: "", unit_cost: "", price_edited: false,
       });
+
       setStartsAt(today); setDurationPreset("1"); setCustomMonths("18");
       setEndsAt(""); setEndEdited(false);
       setOpen(false);

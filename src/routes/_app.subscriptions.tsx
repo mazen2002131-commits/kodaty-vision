@@ -1,7 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { RefreshCw, AlertTriangle, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  RefreshCw, AlertTriangle, CheckCircle2, XCircle, Loader2,
+  Search, Filter, Download, Plus, Calendar, TrendingUp, Sparkles,
+} from "lucide-react";
 import { useSubscriptions, formatEGP, daysBetween, avatarColor } from "@/lib/db";
 import { Avatar } from "@/components/app/pills";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/subscriptions")({
@@ -9,106 +15,380 @@ export const Route = createFileRoute("/_app/subscriptions")({
   head: () => ({ meta: [{ title: "الاشتراكات — Kodaty" }] }),
 });
 
-const STATUS = {
-  active:    { label: "نشط",         icon: CheckCircle2,  cls: "bg-success/10 text-success border-success/25" },
-  expiring:  { label: "ينتهي قريباً", icon: AlertTriangle, cls: "bg-warning/15 text-warning border-warning/30" },
-  expired:   { label: "منتهي",       icon: XCircle,       cls: "bg-destructive/10 text-destructive border-destructive/25" },
-  cancelled: { label: "ملغي",        icon: XCircle,       cls: "bg-muted text-muted-foreground border-border" },
-} as const;
+type StatusKey = "active" | "expiring" | "expired" | "cancelled";
+
+const STATUS: Record<StatusKey, {
+  label: string;
+  icon: typeof CheckCircle2;
+  ring: string;
+  tint: string;
+  dot: string;
+  chip: string;
+}> = {
+  active: {
+    label: "نشط",
+    icon: CheckCircle2,
+    ring: "ring-emerald-200/70 dark:ring-emerald-500/20",
+    tint: "from-emerald-50 to-white dark:from-emerald-500/10 dark:to-transparent",
+    dot: "bg-emerald-500",
+    chip: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30",
+  },
+  expiring: {
+    label: "ينتهي قريباً",
+    icon: AlertTriangle,
+    ring: "ring-amber-200/70 dark:ring-amber-500/20",
+    tint: "from-amber-50 to-white dark:from-amber-500/10 dark:to-transparent",
+    dot: "bg-amber-500",
+    chip: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/30",
+  },
+  expired: {
+    label: "منتهي",
+    icon: XCircle,
+    ring: "ring-rose-200/70 dark:ring-rose-500/20",
+    tint: "from-rose-50 to-white dark:from-rose-500/10 dark:to-transparent",
+    dot: "bg-rose-500",
+    chip: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/30",
+  },
+  cancelled: {
+    label: "ملغي",
+    icon: XCircle,
+    ring: "ring-muted",
+    tint: "from-muted/40 to-transparent",
+    dot: "bg-muted-foreground",
+    chip: "bg-muted text-muted-foreground border-border",
+  },
+};
 
 function SubsPage() {
   const { data: subs = [], isLoading } = useSubscriptions();
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<StatusKey | "all">("all");
 
-  const groups = (["expiring", "active", "expired", "cancelled"] as const).map(k => ({
-    key: k,
-    items: subs.filter(s => s.status === k),
-  }));
+  const counts = useMemo(() => ({
+    active: subs.filter(s => s.status === "active").length,
+    expiring: subs.filter(s => s.status === "expiring").length,
+    expired: subs.filter(s => s.status === "expired").length,
+    cancelled: subs.filter(s => s.status === "cancelled").length,
+  }), [subs]);
+
+  const mrr = useMemo(
+    () => subs.filter(s => s.status === "active" || s.status === "expiring")
+             .reduce((sum, s) => sum + Number(s.price ?? 0), 0),
+    [subs]
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return subs.filter(s => {
+      if (filter !== "all" && s.status !== filter) return false;
+      if (!q) return true;
+      return (
+        (s.customers?.name ?? "").toLowerCase().includes(q) ||
+        (s.product_name ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [subs, query, filter]);
+
+  const groups = (["expiring", "active", "expired", "cancelled"] as const)
+    .map(k => ({ key: k, items: filtered.filter(s => s.status === k) }))
+    .filter(g => g.items.length > 0);
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">الاشتراكات</h1>
-        <p className="text-sm text-muted-foreground">تابع التجديدات وحالات الاشتراكات لعملائك</p>
-      </div>
+    <div className="space-y-6">
+      {/* Hero header */}
+      <header className="surface-elevated relative overflow-hidden p-6">
+        <div className="pointer-events-none absolute -end-24 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+        <div className="pointer-events-none absolute -start-16 -bottom-24 h-48 w-48 rounded-full bg-primary/5 blur-3xl" />
+        <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:items-center sm:justify-between">
+          <div className="min-w-0 space-y-1.5">
+            <div className="flex items-center gap-2 text-xs font-medium text-primary/80">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>مركز الاشتراكات</span>
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight">الاشتراكات</h1>
+            <p className="text-sm text-muted-foreground">
+              تابع التجديدات ودورات الاشتراكات لعملائك في مكان واحد
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Download className="h-4 w-4" /> تصدير
+            </Button>
+            <Button size="sm" className="gap-1.5">
+              <Plus className="h-4 w-4" /> اشتراك جديد
+            </Button>
+          </div>
+        </div>
+      </header>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        {(["active", "expiring", "expired"] as const).map(k => {
-          const meta = STATUS[k]; const Icon = meta.icon;
-          const count = subs.filter(s => s.status === k).length;
-          return (
-            <div key={k} className={cn("surface-elevated flex items-center gap-3 p-4 border-s-4", meta.cls.split(" ").at(-1))}>
-              <div className={cn("grid h-10 w-10 place-items-center rounded-lg border", meta.cls)}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">{meta.label}</div>
-                <div className="num text-lg font-semibold">{count}</div>
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiCard
+          label="نشط"
+          value={counts.active}
+          hint="اشتراكات فعّالة"
+          Icon={CheckCircle2}
+          meta={STATUS.active}
+          onClick={() => setFilter(filter === "active" ? "all" : "active")}
+          active={filter === "active"}
+        />
+        <KpiCard
+          label="ينتهي قريباً"
+          value={counts.expiring}
+          hint="خلال ١٤ يوم"
+          Icon={AlertTriangle}
+          meta={STATUS.expiring}
+          onClick={() => setFilter(filter === "expiring" ? "all" : "expiring")}
+          active={filter === "expiring"}
+        />
+        <KpiCard
+          label="منتهي"
+          value={counts.expired}
+          hint="تحتاج متابعة"
+          Icon={XCircle}
+          meta={STATUS.expired}
+          onClick={() => setFilter(filter === "expired" ? "all" : "expired")}
+          active={filter === "expired"}
+        />
+        <div className="surface-elevated relative overflow-hidden p-4">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent" />
+          <div className="relative flex items-start justify-between">
+            <div className="space-y-1">
+              <div className="text-xs text-muted-foreground">إيراد متكرر شهري</div>
+              <div className="num text-2xl font-semibold tracking-tight">{formatEGP(mrr)}</div>
+              <div className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400">
+                <TrendingUp className="h-3 w-3" /> اشتراكات فعّالة
               </div>
             </div>
-          );
-        })}
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
+              <Calendar className="h-5 w-5" />
+            </div>
+          </div>
+        </div>
       </div>
 
+      {/* Toolbar */}
+      <div className="surface-elevated flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
+        <div className="flex-1">
+          <Input
+            leadingIcon={<Search className="h-4 w-4" />}
+            placeholder="ابحث باسم العميل أو المنتج…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <FilterChip label="الكل" active={filter === "all"} onClick={() => setFilter("all")} count={subs.length} />
+          <FilterChip label="نشط" active={filter === "active"} onClick={() => setFilter("active")} count={counts.active} tone="emerald" />
+          <FilterChip label="ينتهي قريباً" active={filter === "expiring"} onClick={() => setFilter("expiring")} count={counts.expiring} tone="amber" />
+          <FilterChip label="منتهي" active={filter === "expired"} onClick={() => setFilter("expired")} count={counts.expired} tone="rose" />
+        </div>
+      </div>
+
+      {/* Loading */}
       {isLoading && (
-        <div className="surface-elevated grid place-items-center py-16 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
+        <div className="surface-elevated grid place-items-center py-20 text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       )}
 
+      {/* Empty */}
       {!isLoading && subs.length === 0 && (
-        <div className="surface-elevated grid place-items-center py-16 text-sm text-muted-foreground">
-          لا توجد اشتراكات بعد.
+        <div className="surface-elevated relative overflow-hidden">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
+          <div className="relative grid place-items-center gap-4 py-20 text-center">
+            <div className="relative">
+              <div className="absolute inset-0 animate-pulse rounded-2xl bg-primary/10 blur-xl" />
+              <div className="relative grid h-16 w-16 place-items-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+                <RefreshCw className="h-7 w-7" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-base font-semibold">لا توجد اشتراكات بعد</div>
+              <div className="mx-auto max-w-sm text-sm text-muted-foreground">
+                ستظهر هنا الاشتراكات تلقائياً عند بيع منتج بنوع فوترة شهري أو سنوي.
+              </div>
+            </div>
+            <Button size="sm" className="gap-1.5">
+              <Plus className="h-4 w-4" /> إضافة اشتراك يدوي
+            </Button>
+          </div>
         </div>
       )}
 
-      {groups.map(g => g.items.length > 0 && (
-        <section key={g.key} className="space-y-2">
-          <h2 className="text-sm font-semibold">{STATUS[g.key].label}</h2>
-          <div className="surface-elevated overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-surface-sunken/50 text-xs text-muted-foreground">
-                  <th className="px-4 py-2.5 text-start font-medium">العميل</th>
-                  <th className="px-3 py-2.5 text-start font-medium">المنتج</th>
-                  <th className="px-3 py-2.5 text-start font-medium">تاريخ الانتهاء</th>
-                  <th className="px-3 py-2.5 text-start font-medium">الأيام المتبقية</th>
-                  <th className="px-3 py-2.5 text-start font-medium">سعر التجديد</th>
-                  <th className="px-4 py-2.5 text-start font-medium">تجديد تلقائي</th>
-                </tr>
-              </thead>
-              <tbody>
-                {g.items.map(s => {
-                  const d = daysBetween(s.ends_at);
-                  const cname = s.customers?.name ?? "—";
-                  return (
-                    <tr key={s.id} className="border-b border-border/60 last:border-0 hover:bg-accent/30">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <Avatar name={cname} color={avatarColor(cname)} size={26} />
-                          <span>{cname}</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-3">{s.product_name}</td>
-                      <td className="px-3 py-3 num">{new Date(s.ends_at).toLocaleDateString("ar-EG")}</td>
-                      <td className="px-3 py-3">
-                        <span className={cn("num font-medium", d < 0 ? "text-destructive" : d <= 14 ? "text-warning" : "text-success")}>
-                          {d < 0 ? `−${Math.abs(d)}` : d} يوم
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 num">{s.price ? formatEGP(Number(s.price)) : "—"}</td>
-                      <td className="px-4 py-3">
-                        <span className={cn("inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs", s.auto_renew ? "bg-success/10 text-success" : "bg-muted text-muted-foreground")}>
-                          <RefreshCw className="h-3 w-3" /> {s.auto_renew ? "مفعّل" : "معطّل"}
-                        </span>
-                      </td>
+      {/* Filtered empty */}
+      {!isLoading && subs.length > 0 && filtered.length === 0 && (
+        <div className="surface-elevated grid place-items-center gap-2 py-14 text-center">
+          <Filter className="h-5 w-5 text-muted-foreground" />
+          <div className="text-sm text-muted-foreground">لا توجد نتائج مطابقة للفلتر أو البحث.</div>
+        </div>
+      )}
+
+      {/* Groups */}
+      {groups.map(g => {
+        const meta = STATUS[g.key];
+        return (
+          <section key={g.key} className="space-y-2.5">
+            <div className="flex items-center gap-2 px-1">
+              <span className={cn("h-2 w-2 rounded-full", meta.dot)} />
+              <h2 className="text-sm font-semibold">{meta.label}</h2>
+              <span className="text-xs text-muted-foreground">({g.items.length})</span>
+            </div>
+            <div className="surface-elevated overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
+                      <th className="px-4 py-3 text-start font-medium">العميل</th>
+                      <th className="px-3 py-3 text-start font-medium">المنتج</th>
+                      <th className="px-3 py-3 text-start font-medium">تاريخ الانتهاء</th>
+                      <th className="px-3 py-3 text-start font-medium">المدة</th>
+                      <th className="px-3 py-3 text-start font-medium">سعر التجديد</th>
+                      <th className="px-4 py-3 text-start font-medium">تجديد تلقائي</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      ))}
+                  </thead>
+                  <tbody>
+                    {g.items.map(s => {
+                      const d = daysBetween(s.ends_at);
+                      const cname = s.customers?.name ?? "—";
+                      const total = 30;
+                      const pct = Math.max(0, Math.min(100, (d / total) * 100));
+                      const barTone =
+                        d < 0 ? "bg-rose-500" : d <= 7 ? "bg-rose-400" : d <= 14 ? "bg-amber-400" : "bg-emerald-500";
+                      return (
+                        <tr key={s.id} className="border-b border-border/60 last:border-0 transition-colors hover:bg-primary/[0.03]">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2.5">
+                              <Avatar name={cname} color={avatarColor(cname)} size={30} />
+                              <div className="min-w-0">
+                                <div className="truncate font-medium">{cname}</div>
+                                {s.customers?.email && (
+                                  <div className="truncate text-[11px] text-muted-foreground">{s.customers.email}</div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3">
+                            <span className="inline-flex items-center rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs">
+                              {s.product_name}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 num text-muted-foreground">
+                            {new Date(s.ends_at).toLocaleDateString("ar-EG")}
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="flex flex-col gap-1.5">
+                              <span className={cn(
+                                "num text-xs font-semibold",
+                                d < 0 ? "text-rose-600 dark:text-rose-400"
+                                  : d <= 14 ? "text-amber-600 dark:text-amber-400"
+                                  : "text-emerald-600 dark:text-emerald-400"
+                              )}>
+                                {d < 0 ? `متأخر ${Math.abs(d)} يوم` : `${d} يوم`}
+                              </span>
+                              <div className="h-1 w-24 overflow-hidden rounded-full bg-muted">
+                                <div className={cn("h-full rounded-full transition-all", barTone)} style={{ width: `${pct}%` }} />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 num font-medium">
+                            {s.price ? formatEGP(Number(s.price)) : "—"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={cn(
+                              "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium",
+                              s.auto_renew
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
+                                : "border-border bg-muted text-muted-foreground"
+                            )}>
+                              <RefreshCw className={cn("h-3 w-3", s.auto_renew && "animate-[spin_6s_linear_infinite]")} />
+                              {s.auto_renew ? "مفعّل" : "معطّل"}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        );
+      })}
     </div>
+  );
+}
+
+function KpiCard({
+  label, value, hint, Icon, meta, onClick, active,
+}: {
+  label: string;
+  value: number;
+  hint: string;
+  Icon: typeof CheckCircle2;
+  meta: typeof STATUS[StatusKey];
+  onClick?: () => void;
+  active?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "surface-elevated group relative overflow-hidden p-4 text-start transition-all",
+        "hover:-translate-y-0.5 hover:shadow-lg",
+        active && "ring-2 ring-primary/40"
+      )}
+    >
+      <div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br opacity-70", meta.tint)} />
+      <div className="relative flex items-start justify-between">
+        <div className="space-y-1">
+          <div className="text-xs font-medium text-muted-foreground">{label}</div>
+          <div className="num text-2xl font-semibold tracking-tight">{value}</div>
+          <div className="text-[11px] text-muted-foreground">{hint}</div>
+        </div>
+        <div className={cn(
+          "grid h-10 w-10 place-items-center rounded-xl border transition-transform group-hover:scale-110",
+          meta.chip
+        )}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function FilterChip({
+  label, active, onClick, count, tone,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  count: number;
+  tone?: "emerald" | "amber" | "rose";
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
+        active
+          ? "border-primary bg-primary text-primary-foreground shadow-sm"
+          : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
+      )}
+    >
+      {label}
+      <span className={cn(
+        "num rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+        active ? "bg-white/20 text-primary-foreground"
+          : tone === "emerald" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+          : tone === "amber" ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+          : tone === "rose" ? "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
+          : "bg-muted text-muted-foreground"
+      )}>
+        {count}
+      </span>
+    </button>
   );
 }

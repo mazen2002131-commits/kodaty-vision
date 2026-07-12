@@ -78,10 +78,12 @@ export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
 
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur-xl">
-      <div className="flex h-14 items-center gap-3 px-6">
-        <div className="flex items-center gap-2 text-[13px]">
-          <span className="text-muted-foreground">Kodaty</span>
+    <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur-xl">
+      <div className="flex h-14 items-center gap-3 px-5">
+        <div className="flex items-center gap-2 text-[12.5px]">
+          <span className="rounded-md bg-accent px-1.5 py-0.5 font-display text-[11px] font-semibold uppercase tracking-wider text-accent-foreground">
+            Kodaty
+          </span>
           <span className="text-muted-foreground/40">/</span>
           <span className="font-medium text-foreground">{crumb}</span>
         </div>
@@ -89,13 +91,12 @@ export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
         <div className="ms-auto flex items-center gap-1.5">
           <button
             onClick={onOpenPalette}
-            className="group hidden items-center gap-2 rounded-lg border border-border/80 bg-surface px-3 py-1.5 text-[13px] text-muted-foreground transition-all hover:border-border-strong hover:shadow-sm md:flex md:w-80"
+            className="group hidden items-center gap-2 rounded-lg border border-border bg-surface/70 px-3 py-1.5 text-[13px] text-muted-foreground transition-all hover:border-border-strong hover:bg-surface hover:shadow-sm md:flex md:w-[340px]"
           >
             <Search className="h-3.5 w-3.5" />
             <span className="flex-1 text-start">ابحث في كل شيء…</span>
-            <kbd className="rounded border border-border bg-surface-sunken px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-              ⌘ K
-            </kbd>
+            <span className="kbd">⌘</span>
+            <span className="kbd">K</span>
           </button>
 
           <button
@@ -108,10 +109,12 @@ export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
 
           <button
             onClick={() => navigate({ to: "/orders", search: { new: 1 } as never })}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground shadow-sm transition hover:opacity-95"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[13px] font-semibold text-primary-foreground shadow-brand transition hover:opacity-95 active:scale-[0.98]"
           >
             <Plus className="h-3.5 w-3.5" /> <span className="hidden sm:inline">طلب جديد</span>
           </button>
+
+          <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
 
           <button
             onClick={toggle}
@@ -134,9 +137,13 @@ export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
           <DropdownMenu>
             <DropdownMenuTrigger className="relative rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground">
               <Bell className="h-4 w-4" />
-              <span className="absolute end-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-primary ring-2 ring-background" />
+              {notifications.length > 0 && (
+                <span className="absolute end-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 font-mono text-[9px] font-bold text-primary-foreground ring-2 ring-background">
+                  {notifications.length > 9 ? "9+" : notifications.length}
+                </span>
+              )}
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-96 p-0">
+            <DropdownMenuContent align="end" className="w-96 overflow-hidden p-0">
               <div className="flex items-center justify-between border-b border-border p-3">
                 <div className="text-sm font-semibold">الإشعارات</div>
                 <button className="text-xs text-primary hover:underline">تحديد الكل كمقروء</button>
@@ -174,7 +181,7 @@ export function Topbar({ onOpenPalette, onOpenShortcuts }: TopbarProps) {
                   )}
                 </div>
               </div>
-              <div className="grid h-7 w-7 place-items-center rounded-md brand-gradient text-xs font-semibold text-white">
+              <div className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-800 font-display text-[13px] font-semibold text-white shadow-brand">
                 {profile.initial}
               </div>
             </DropdownMenuTrigger>

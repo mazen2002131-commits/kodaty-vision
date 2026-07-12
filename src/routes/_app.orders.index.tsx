@@ -148,7 +148,11 @@ function NewOrderButton() {
     priority: "normal" as OrderPriority, status: "pending" as OrderStatus,
     payment_method: "" as string,
     order_date: new Date().toISOString().slice(0, 10),
+    unit_price: "" as string,
+    unit_cost: "" as string,
+    price_edited: false,
   });
+
 
   // Subscription duration state (only used when product is subscription)
   const today = new Date().toISOString().slice(0, 10);
@@ -159,7 +163,9 @@ function NewOrderButton() {
   const [endEdited, setEndEdited] = useState(false);
 
   const product = products.find(p => p.id === form.product_id);
-  const total = product ? Number(product.price) * form.qty : 0;
+  const effectivePrice = form.unit_price !== "" ? Number(form.unit_price) : (product ? Number(product.price) : 0);
+  const effectiveCost = form.unit_cost !== "" ? Number(form.unit_cost) : (product ? Number((product as any).cost_price ?? 0) : 0);
+  const total = effectivePrice * form.qty;
   const isSub = !!product && (product as any).billing_type && (product as any).billing_type !== "one_time";
 
   const months = useMemo(() => {
@@ -167,14 +173,20 @@ function NewOrderButton() {
     return parseInt(durationPreset, 10);
   }, [durationPreset, customMonths]);
 
-  // When product changes, seed the duration preset from billing_type
+  // When product changes, seed the duration preset from billing_type and price fields
   useEffect(() => {
     if (!product) return;
     const bt = (product as any).billing_type;
     if (bt === "yearly") setDurationPreset("12");
     else if (bt === "monthly") setDurationPreset("1");
     setEndEdited(false);
+    setForm(f => f.price_edited ? f : {
+      ...f,
+      unit_price: String(product.price ?? ""),
+      unit_cost: String((product as any).cost_price ?? 0),
+    });
   }, [form.product_id]);
+
 
   // Auto-compute end date
   useEffect(() => {
@@ -217,9 +229,10 @@ function NewOrderButton() {
         customer_id: customerId!,
         product_id: product.id,
         product_name: product.name,
-        unit_price: Number(product.price),
-        unit_cost: Number((product as any).cost_price ?? 0),
+        unit_price: effectivePrice,
+        unit_cost: effectiveCost,
         qty: form.qty,
+
         priority: form.priority,
         status: form.status,
         billing_type: (product as any).billing_type ?? "one_time",
@@ -239,7 +252,9 @@ function NewOrderButton() {
         customer_name: "", customer_email: "", customer_phone: "",
         product_id: "", qty: 1, priority: "normal", status: "pending",
         payment_method: "", order_date: new Date().toISOString().slice(0, 10),
+        unit_price: "", unit_cost: "", price_edited: false,
       });
+
       setStartsAt(today); setDurationPreset("1"); setCustomMonths("18");
       setEndsAt(""); setEndEdited(false);
       setOpen(false);
@@ -323,6 +338,32 @@ function NewOrderButton() {
               {products.map(p => <option key={p.id} value={p.id}>{p.name} — {formatEGP(Number(p.price))}</option>)}
             </select>
           </Field>
+          {product && (
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="سعر البيع (للوحدة)">
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={form.unit_price}
+                  onChange={e => setForm({ ...form, unit_price: e.target.value, price_edited: true })}
+                  className={input}
+                  placeholder={String(product.price)}
+                />
+              </Field>
+              <Field label="سعر التكلفة (للوحدة)">
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={form.unit_cost}
+                  onChange={e => setForm({ ...form, unit_cost: e.target.value, price_edited: true })}
+                  className={input}
+                  placeholder={String((product as any).cost_price ?? 0)}
+                />
+              </Field>
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-3">
             <Field label="الكمية">
               <input type="number" min={1} value={form.qty} onChange={e => setForm({ ...form, qty: Math.max(1, Number(e.target.value)) })} className={input} />

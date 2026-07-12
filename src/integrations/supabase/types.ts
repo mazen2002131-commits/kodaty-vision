@@ -744,6 +744,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_user: {
+        Args: {
+          _email: string
+          _full_name: string
+          _password: string
+          _perms: string[]
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: string
+      }
       admin_delete_user: { Args: { _user_id: string }; Returns: undefined }
       admin_list_team: {
         Args: never

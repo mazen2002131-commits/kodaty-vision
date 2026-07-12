@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   RefreshCw, AlertTriangle, CheckCircle2, XCircle, Loader2,
   Search, Filter, Download, Plus, Calendar, TrendingUp, Sparkles,
@@ -403,6 +403,10 @@ function FilterChip({
   );
 }
 
+function toDateInput(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
 function NewSubDialog({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const { data: customers = [] } = useCustomers();
@@ -413,13 +417,36 @@ function NewSubDialog({ children }: { children: React.ReactNode }) {
   const [productId, setProductId] = useState<string>("");
   const [productName, setProductName] = useState("");
   const [price, setPrice] = useState<string>("");
-  const [billingType, setBillingType] = useState<"monthly" | "yearly">("monthly");
   const [autoRenew, setAutoRenew] = useState(true);
   const [notes, setNotes] = useState("");
 
+  // Duration state
+  const [startsAt, setStartsAt] = useState<string>(toDateInput(new Date()));
+  const [durationPreset, setDurationPreset] = useState<string>("1"); // months, "custom" for custom
+  const [customMonths, setCustomMonths] = useState<string>("18");
+  const [endsAt, setEndsAt] = useState<string>("");
+  const [endEdited, setEndEdited] = useState(false);
+
+  const months = useMemo(() => {
+    if (durationPreset === "custom") return Math.max(1, parseInt(customMonths || "0", 10) || 0);
+    return parseInt(durationPreset, 10);
+  }, [durationPreset, customMonths]);
+
+  // Auto-compute end date when start/duration changes (unless user edited manually)
+  useEffect(() => {
+    if (endEdited) return;
+    if (!startsAt || !months) return;
+    const d = new Date(startsAt);
+    d.setMonth(d.getMonth() + months);
+    setEndsAt(toDateInput(d));
+  }, [startsAt, months, endEdited]);
+
   function reset() {
     setCustomerId(""); setProductId(""); setProductName("");
-    setPrice(""); setBillingType("monthly"); setAutoRenew(true); setNotes("");
+    setPrice(""); setAutoRenew(true); setNotes("");
+    setStartsAt(toDateInput(new Date()));
+    setDurationPreset("1"); setCustomMonths("18");
+    setEndsAt(""); setEndEdited(false);
   }
 
   function pickProduct(id: string) {
@@ -428,23 +455,27 @@ function NewSubDialog({ children }: { children: React.ReactNode }) {
     if (p) {
       setProductName(p.name);
       setPrice(String(p.price ?? ""));
-      if (p.billing_type === "yearly") setBillingType("yearly");
-      else if (p.billing_type === "monthly") setBillingType("monthly");
+      if (p.billing_type === "yearly") setDurationPreset("12");
+      else if (p.billing_type === "monthly") setDurationPreset("1");
     }
   }
 
   async function submit() {
     if (!customerId) return toast.error("اختر العميل");
     if (!productName.trim()) return toast.error("أدخل اسم المنتج");
+    if (!months || months < 1) return toast.error("أدخل مدة صحيحة بالأشهر");
     try {
       await create.mutateAsync({
         customer_id: customerId,
         product_id: productId || null,
         product_name: productName.trim(),
         price: price ? Number(price) : null,
-        billing_type: billingType,
+        billing_type: months >= 12 && months % 12 === 0 ? "yearly" : "monthly",
         auto_renew: autoRenew,
         notes: notes.trim() || null,
+        starts_at: new Date(startsAt).toISOString(),
+        ends_at: endsAt ? new Date(endsAt).toISOString() : undefined,
+        duration_months: months,
       });
       toast.success("تم إنشاء الاشتراك");
       reset();
@@ -457,7 +488,7 @@ function NewSubDialog({ children }: { children: React.ReactNode }) {
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>اشتراك جديد</DialogTitle>
         </DialogHeader>
@@ -487,20 +518,70 @@ function NewSubDialog({ children }: { children: React.ReactNode }) {
             <Input placeholder="اسم المنتج" value={productName} onChange={(e) => setProductName(e.target.value)} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-1.5">
-              <Label>سعر التجديد (ج.م)</Label>
-              <Input type="number" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" />
+          <div className="grid gap-1.5">
+            <Label>سعر التجديد (ج.م)</Label>
+            <Input type="number" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" />
+          </div>
+
+          {/* Duration section */}
+          <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-3">
+            <div className="text-sm font-medium">مدة الاشتراك</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label className="text-xs">تاريخ البداية</Label>
+                <Input
+                  type="date"
+                  value={startsAt}
+                  onChange={(e) => { setStartsAt(e.target.value); setEndEdited(false); }}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs">تاريخ الانتهاء</Label>
+                <Input
+                  type="date"
+                  value={endsAt}
+                  onChange={(e) => { setEndsAt(e.target.value); setEndEdited(true); }}
+                />
+              </div>
             </div>
             <div className="grid gap-1.5">
-              <Label>نوع الاشتراك</Label>
-              <Select value={billingType} onValueChange={(v) => setBillingType(v as any)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="monthly">شهري</SelectItem>
-                  <SelectItem value="yearly">سنوي</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className="text-xs">المدة</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { v: "1", l: "شهر" },
+                  { v: "3", l: "3 شهور" },
+                  { v: "6", l: "6 شهور" },
+                  { v: "12", l: "سنة" },
+                  { v: "24", l: "سنتين" },
+                  { v: "custom", l: "مخصص" },
+                ].map(o => (
+                  <button
+                    key={o.v}
+                    type="button"
+                    onClick={() => { setDurationPreset(o.v); setEndEdited(false); }}
+                    className={cn(
+                      "rounded-full border px-3 py-1 text-xs transition",
+                      durationPreset === o.v
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    )}
+                  >
+                    {o.l}
+                  </button>
+                ))}
+              </div>
+              {durationPreset === "custom" && (
+                <div className="flex items-center gap-2 pt-1">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={customMonths}
+                    onChange={(e) => { setCustomMonths(e.target.value); setEndEdited(false); }}
+                    className="w-28"
+                  />
+                  <span className="text-xs text-muted-foreground">شهر</span>
+                </div>
+              )}
             </div>
           </div>
 

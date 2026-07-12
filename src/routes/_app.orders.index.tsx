@@ -148,8 +148,41 @@ function NewOrderButton() {
     priority: "normal" as OrderPriority, status: "pending" as OrderStatus,
   });
 
+  // Subscription duration state (only used when product is subscription)
+  const today = new Date().toISOString().slice(0, 10);
+  const [startsAt, setStartsAt] = useState(today);
+  const [durationPreset, setDurationPreset] = useState<string>("1");
+  const [customMonths, setCustomMonths] = useState<string>("18");
+  const [endsAt, setEndsAt] = useState("");
+  const [endEdited, setEndEdited] = useState(false);
+
   const product = products.find(p => p.id === form.product_id);
   const total = product ? Number(product.price) * form.qty : 0;
+  const isSub = !!product && (product as any).billing_type && (product as any).billing_type !== "one_time";
+
+  const months = useMemo(() => {
+    if (durationPreset === "custom") return Math.max(1, parseInt(customMonths || "0", 10) || 0);
+    return parseInt(durationPreset, 10);
+  }, [durationPreset, customMonths]);
+
+  // When product changes, seed the duration preset from billing_type
+  useEffect(() => {
+    if (!product) return;
+    const bt = (product as any).billing_type;
+    if (bt === "yearly") setDurationPreset("12");
+    else if (bt === "monthly") setDurationPreset("1");
+    setEndEdited(false);
+  }, [form.product_id]);
+
+  // Auto-compute end date
+  useEffect(() => {
+    if (!isSub) return;
+    if (endEdited) return;
+    if (!startsAt || !months) return;
+    const d = new Date(startsAt);
+    d.setMonth(d.getMonth() + months);
+    setEndsAt(d.toISOString().slice(0, 10));
+  }, [startsAt, months, endEdited, isSub]);
 
   const trimmedName = form.customer_name.trim();
   const matched = trimmedName
@@ -188,17 +221,22 @@ function NewOrderButton() {
         priority: form.priority,
         status: form.status,
         billing_type: (product as any).billing_type ?? "one_time",
+        ...(isSub ? {
+          starts_at: new Date(startsAt).toISOString(),
+          ends_at: endsAt ? new Date(endsAt).toISOString() : undefined,
+          duration_months: months,
+        } : {}),
       });
       toast.success(
-        (product as any).billing_type && (product as any).billing_type !== "one_time"
-          ? "تم إنشاء الطلب والاشتراك"
-          : "تم إنشاء الطلب"
+        isSub ? "تم إنشاء الطلب والاشتراك" : "تم إنشاء الطلب"
       );
 
       setForm({
         customer_name: "", customer_email: "", customer_phone: "",
         product_id: "", qty: 1, priority: "normal", status: "pending",
       });
+      setStartsAt(today); setDurationPreset("1"); setCustomMonths("18");
+      setEndsAt(""); setEndEdited(false);
       setOpen(false);
     } catch (err) {
       toast.error("تعذّر الإنشاء", { description: (err as Error).message });
@@ -300,6 +338,71 @@ function NewOrderButton() {
               </select>
             </Field>
           </div>
+
+          {isSub && (
+            <div className="rounded-lg border border-primary/30 bg-primary/[0.04] p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-medium">مدة الاشتراك</div>
+                <span className="text-[11px] rounded-full bg-primary/10 text-primary px-2 py-0.5">
+                  {(product as any)?.billing_type === "yearly" ? "سنوي" : "شهري"}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="تاريخ البداية">
+                  <input
+                    type="date"
+                    value={startsAt}
+                    onChange={e => { setStartsAt(e.target.value); setEndEdited(false); }}
+                    className={input}
+                  />
+                </Field>
+                <Field label="تاريخ الانتهاء">
+                  <input
+                    type="date"
+                    value={endsAt}
+                    onChange={e => { setEndsAt(e.target.value); setEndEdited(true); }}
+                    className={input}
+                  />
+                </Field>
+              </div>
+              <div className="space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">المدة</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { v: "1", l: "شهر" },
+                    { v: "3", l: "3 شهور" },
+                    { v: "6", l: "6 شهور" },
+                    { v: "12", l: "سنة" },
+                    { v: "24", l: "سنتين" },
+                    { v: "custom", l: "مخصص" },
+                  ].map(o => (
+                    <button
+                      key={o.v}
+                      type="button"
+                      onClick={() => { setDurationPreset(o.v); setEndEdited(false); }}
+                      className={cn(
+                        "rounded-full border px-3 py-1 text-xs transition",
+                        durationPreset === o.v
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-surface-sunken text-muted-foreground hover:text-foreground"
+                      )}
+                    >{o.l}</button>
+                  ))}
+                </div>
+                {durationPreset === "custom" && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      type="number" min={1}
+                      value={customMonths}
+                      onChange={e => { setCustomMonths(e.target.value); setEndEdited(false); }}
+                      className={cn(input, "w-28")}
+                    />
+                    <span className="text-xs text-muted-foreground">شهر</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <div className="flex items-center justify-between rounded-lg border border-border bg-surface-sunken px-3 py-2 text-sm">
             <span className="text-muted-foreground">الإجمالي</span>
             <span className="num font-semibold text-primary">{formatEGP(total)}</span>

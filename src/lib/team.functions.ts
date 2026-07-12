@@ -41,36 +41,15 @@ export const createTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data) => createSchema.parse(data))
   .handler(async ({ context, data }) => {
-    await assertAdmin(context as any);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
-      email: data.email,
-      password: data.password,
-      email_confirm: true,
-      user_metadata: { full_name: data.full_name },
+    const { data: uid, error } = await context.supabase.rpc("admin_create_user", {
+      _email: data.email,
+      _password: data.password,
+      _full_name: data.full_name,
+      _role: data.role,
+      _perms: data.role === "admin" ? [] : data.permissions,
     });
     if (error) throw new Error(error.message);
-    const uid = created.user!.id;
-
-    await supabaseAdmin.from("user_roles").delete().eq("user_id", uid);
-    const { error: rErr } = await supabaseAdmin
-      .from("user_roles")
-      .insert({ user_id: uid, role: data.role });
-    if (rErr) throw new Error(rErr.message);
-
-    await supabaseAdmin
-      .from("profiles")
-      .upsert({ id: uid, full_name: data.full_name }, { onConflict: "id" });
-
-    // Set granular permissions (admins get all implicitly; still persist for clarity).
-    const { error: pErr } = await (context.supabase as any).rpc("admin_set_permissions", {
-      _user_id: uid,
-      _perms: data.permissions,
-    });
-    if (pErr) throw new Error(pErr.message);
-
-    return { id: uid };
+    return { id: uid as string };
   });
 
 const updateRoleSchema = z.object({

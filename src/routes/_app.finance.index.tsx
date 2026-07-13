@@ -172,7 +172,7 @@ function Finance() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold">التدفق النقدي</h3>
-              <p className="text-xs text-muted-foreground">آخر 30 يوماً — الإيرادات مقابل المصروفات</p>
+              <p className="text-xs text-muted-foreground">{period === "all" ? "كامل السجل" : `آخر ${period} يوم`} — الإيرادات مقابل المصروفات</p>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: "var(--brand-600)" }} />الإيرادات</span>

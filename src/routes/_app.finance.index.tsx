@@ -31,8 +31,21 @@ const PAYMENT_LABELS: Record<string, string> = {
 };
 
 function Finance() {
-  const { data: orders = [], isLoading: ordersLoading } = useOrders();
-  const { data: journal = [] } = useJournal();
+  const { data: allOrders = [], isLoading: ordersLoading } = useOrders();
+  const { data: allJournal = [] } = useJournal();
+
+  const [period, setPeriod] = useState<"7" | "30" | "90" | "365" | "all">("30");
+  const periodMs = period === "all" ? Infinity : Number(period) * 24 * 60 * 60 * 1000;
+  const cutoff = Date.now() - periodMs;
+
+  const orders = useMemo(
+    () => (period === "all" ? allOrders : allOrders.filter(o => new Date(o.created_at).getTime() >= cutoff)),
+    [allOrders, period, cutoff],
+  );
+  const journal = useMemo(
+    () => (period === "all" ? allJournal : allJournal.filter(e => new Date(e.entry_date).getTime() >= cutoff)),
+    [allJournal, period, cutoff],
+  );
 
   const stats = useMemo(() => {
     const revenue = orders.reduce((s, o) => s + Number(o.total), 0);
@@ -47,15 +60,17 @@ function Finance() {
       .reduce((s, e) => s + Number(e.amount), 0);
     const expenses = cogs + otherExpenses;
     const profit = paid - expenses;
-    return { revenue, paid, unpaid, expenses, cogs, otherExpenses, profit, unpaidCount: orders.filter(o => o.status !== "delivered" && o.status !== "cancelled" && o.status !== "refunded").length };
+    const margin = paid > 0 ? (profit / paid) * 100 : 0;
+    return { revenue, paid, unpaid, expenses, cogs, otherExpenses, profit, margin, unpaidCount: orders.filter(o => o.status !== "delivered" && o.status !== "cancelled" && o.status !== "refunded").length };
   }, [orders, journal]);
 
 
-  // Cash flow series (last 30 days)
+  // Cash flow series over the selected period (capped at 90 buckets for readability)
   const cashSeries = useMemo(() => {
     const days: { day: string; revenue: number; expenses: number }[] = [];
+    const buckets = period === "all" ? 90 : Math.min(Number(period), 90);
     const now = new Date();
-    for (let i = 29; i >= 0; i--) {
+    for (let i = buckets - 1; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
       const key = d.toISOString().slice(0, 10);
@@ -68,7 +83,8 @@ function Finance() {
       days.push({ day: d.getDate().toString(), revenue, expenses });
     }
     return days;
-  }, [orders, journal]);
+  }, [orders, journal, period]);
+
 
   const paymentSplit = useMemo(() => {
     const map = new Map<string, number>();

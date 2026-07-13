@@ -146,7 +146,7 @@ function Finance() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex gap-1 rounded-lg border border-border bg-surface-sunken p-0.5 text-xs">
-            {([["7","7 أيام"],["30","30 يوم"],["90","90 يوم"],["365","سنة"],["all","الكل"]] as const).map(([k, t]) => (
+            {([["1","اليوم"],["7","7 أيام"],["30","30 يوم"],["90","90 يوم"],["365","سنة"],["all","الكل"],["custom","مخصص"]] as const).map(([k, t]) => (
               <button
                 key={k}
                 onClick={() => setPeriod(k)}
@@ -156,6 +156,27 @@ function Finance() {
               </button>
             ))}
           </div>
+          {period === "custom" && (
+            <div className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2 py-1 text-xs">
+              <input
+                type="date"
+                value={customFrom}
+                max={customTo}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="bg-transparent px-1 py-0.5 text-foreground outline-none"
+              />
+              <span className="text-muted-foreground">→</span>
+              <input
+                type="date"
+                value={customTo}
+                min={customFrom}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="bg-transparent px-1 py-0.5 text-foreground outline-none"
+              />
+            </div>
+          )}
+
           <Link
             to="/finance/journal"
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground transition hover:bg-accent"

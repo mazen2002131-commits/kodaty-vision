@@ -81,6 +81,48 @@ export function useCreateCustomer() {
   });
 }
 
+export function useUpdateCustomer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      name?: string;
+      email?: string | null;
+      phone?: string | null;
+      company?: string | null;
+      tier?: string;
+      notes?: string | null;
+    }) => {
+      const { id, ...patch } = input;
+      const { data, error } = await supabase
+        .from("customers")
+        .update(patch)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Customer;
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      qc.invalidateQueries({ queryKey: ["customer", v.id] });
+    },
+  });
+}
+
+export function useDeleteCustomer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("customers").delete().eq("id", id);
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["customers"] }),
+  });
+}
+
+
 // ---------- Products ----------
 export function useProducts() {
   return useQuery({

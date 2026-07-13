@@ -211,15 +211,22 @@ function Dashboard() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <div className="text-sm font-semibold">المبيعات والأرباح</div>
-              <div className="text-xs text-muted-foreground">آخر 30 يوماً</div>
+              <div className="text-xs text-muted-foreground">
+                {period === "day" ? "آخر 24 ساعة" : period === "week" ? "آخر 7 أيام" : period === "month" ? "آخر 30 يوماً" : "آخر 12 شهراً"}
+              </div>
             </div>
             <div className="flex gap-1 rounded-lg border border-border bg-surface-sunken p-0.5 text-xs">
-              {["يوم", "أسبوع", "شهر", "سنة"].map((t, i) => (
-                <button key={t} className={cn("rounded-md px-2.5 py-1 transition", i === 2 ? "bg-surface font-medium shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+              {([["day","يوم"],["week","أسبوع"],["month","شهر"],["year","سنة"]] as const).map(([k, t]) => (
+                <button
+                  key={k}
+                  onClick={() => setPeriod(k)}
+                  className={cn("rounded-md px-2.5 py-1 transition", period === k ? "bg-surface font-medium shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
+                >
                   {t}
                 </button>
               ))}
             </div>
+
           </div>
           <div className="h-72">
             <ResponsiveContainer>

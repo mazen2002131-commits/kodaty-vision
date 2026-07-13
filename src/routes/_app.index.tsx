@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
   Bar, BarChart, Cell,
@@ -10,6 +11,7 @@ import {
 import { useCustomers, useOrders, useProducts, useSubscriptions, formatEGP, avatarColor } from "@/lib/db";
 import { StatusPill, Avatar } from "@/components/app/pills";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_app/")({
   component: Dashboard,

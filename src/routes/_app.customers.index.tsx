@@ -29,11 +29,18 @@ function CustomersList() {
           <p className="text-sm text-muted-foreground num">{customers.length} عميل</p>
         </div>
         <div className="flex gap-2">
+          <Link
+            to="/customers/top"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-accent"
+          >
+            <Trophy className="h-4 w-4 text-warning" /> أفضل العملاء
+          </Link>
           <button className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-accent">
             <Download className="h-4 w-4" /> تصدير
           </button>
           <NewCustomerButton />
         </div>
+
       </div>
 
       <div className="surface-elevated p-3">

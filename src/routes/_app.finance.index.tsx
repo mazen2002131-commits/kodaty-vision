@@ -127,6 +127,17 @@ function Finance() {
           <p className="mt-1 text-sm text-muted-foreground">تدفقاتك النقدية، فواتيرك، مصاريفك، والقيود المحاسبية.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-1 rounded-lg border border-border bg-surface-sunken p-0.5 text-xs">
+            {([["7","7 أيام"],["30","30 يوم"],["90","90 يوم"],["365","سنة"],["all","الكل"]] as const).map(([k, t]) => (
+              <button
+                key={k}
+                onClick={() => setPeriod(k)}
+                className={cn("rounded-md px-2.5 py-1 transition", period === k ? "bg-surface font-medium shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
           <Link
             to="/finance/journal"
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground transition hover:bg-accent"
@@ -144,13 +155,15 @@ function Finance() {
       </div>
 
       {/* KPIs */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <Kpi label="إجمالي الإيرادات" value={formatEGP(stats.revenue)} delta={{ v: `${orders.length} طلب`, up: true }} icon={Wallet} tone="brand" />
         <Kpi label="مقبوضات" value={formatEGP(stats.paid)} delta={{ v: "طلبات مُسلّمة", up: true }} icon={TrendingUp} tone="success" />
         <Kpi label="تكلفة البضاعة" value={formatEGP(stats.cogs)} delta={{ v: "COGS", up: false }} icon={TrendingDown} tone="warning" />
         <Kpi label="صافي الربح" value={formatEGP(stats.profit)} delta={{ v: `مصروفات ${formatEGP(stats.otherExpenses)}`, up: stats.profit >= 0 }} icon={TrendingUp} tone={stats.profit >= 0 ? "success" : "warning"} />
+        <Kpi label="هامش الربح" value={`${stats.margin.toFixed(1)}%`} delta={{ v: stats.margin >= 20 ? "هامش صحي" : stats.margin >= 0 ? "هامش منخفض" : "خسارة", up: stats.margin >= 20 }} icon={TrendingUp} tone={stats.margin >= 20 ? "success" : stats.margin >= 0 ? "warning" : "info"} />
         <Kpi label="فواتير غير مدفوعة" value={formatEGP(stats.unpaid)} delta={{ v: `${stats.unpaidCount} فاتورة`, up: false }} icon={Receipt} tone="info" />
       </div>
+
 
 
       {/* Charts */}

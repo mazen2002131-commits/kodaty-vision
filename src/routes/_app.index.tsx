@@ -71,17 +71,45 @@ function Dashboard() {
   const activeSubs = subscriptions.filter(s => s.status === "active").length;
   const expiringSubs = subscriptions.filter(s => daysUntil(s.ends_at) <= 14 && daysUntil(s.ends_at) >= 0).slice(0, 5);
 
-  const salesSeries = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(now);
-    d.setDate(now.getDate() - (13 - i));
-    const key = d.toISOString().slice(0, 10);
-    const dayOrders = orders.filter(o => o.created_at.slice(0, 10) === key);
-    return {
-      day: d.toLocaleDateString("ar-EG", { day: "2-digit", month: "short" }),
-      sales: dayOrders.reduce((sum, o) => sum + Number(o.total || 0), 0),
-      profit: dayOrders.reduce((sum, o) => sum + (o.order_items ?? []).reduce((s, item) => s + ((Number(item.unit_price) - Number(item.unit_cost ?? 0)) * Number(item.qty)), 0), 0),
-    };
-  });
+  const [period, setPeriod] = useState<"day" | "week" | "month" | "year">("month");
+
+  const salesSeries = useMemo(() => {
+    const cfg = {
+      day: { buckets: 24, stepMs: 60 * 60 * 1000, label: (d: Date) => `${d.getHours()}:00` },
+      week: { buckets: 7, stepMs: 24 * 60 * 60 * 1000, label: (d: Date) => d.toLocaleDateString("ar-EG", { weekday: "short" }) },
+      month: { buckets: 30, stepMs: 24 * 60 * 60 * 1000, label: (d: Date) => d.toLocaleDateString("ar-EG", { day: "2-digit", month: "short" }) },
+      year: { buckets: 12, stepMs: 0, label: (d: Date) => d.toLocaleDateString("ar-EG", { month: "short" }) },
+    }[period];
+
+    return Array.from({ length: cfg.buckets }, (_, i) => {
+      const start = new Date(now);
+      const end = new Date(now);
+      if (period === "year") {
+        start.setMonth(now.getMonth() - (cfg.buckets - 1 - i), 1);
+        start.setHours(0, 0, 0, 0);
+        end.setMonth(start.getMonth() + 1, 1);
+        end.setHours(0, 0, 0, 0);
+      } else if (period === "day") {
+        start.setHours(now.getHours() - (cfg.buckets - 1 - i), 0, 0, 0);
+        end.setTime(start.getTime() + cfg.stepMs);
+      } else {
+        start.setDate(now.getDate() - (cfg.buckets - 1 - i));
+        start.setHours(0, 0, 0, 0);
+        end.setTime(start.getTime() + cfg.stepMs);
+      }
+      const bucketOrders = orders.filter(o => {
+        const t = new Date(o.created_at).getTime();
+        return t >= start.getTime() && t < end.getTime();
+      });
+      return {
+        day: cfg.label(start),
+        sales: bucketOrders.reduce((sum, o) => sum + Number(o.total || 0), 0),
+        profit: bucketOrders.reduce((sum, o) => sum + (o.order_items ?? []).reduce((s, item) => s + ((Number(item.unit_price) - Number(item.unit_cost ?? 0)) * Number(item.qty)), 0), 0),
+      };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, period]);
+
 
   const productStats = new Map<string, { name: string; sold: number; revenue: number }>();
   orders.forEach(o => (o.order_items ?? []).forEach(item => {

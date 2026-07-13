@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, Plus, Download, Loader2 } from "lucide-react";
+import { Search, Plus, Download, Loader2, Trophy } from "lucide-react";
 import { useCustomers, useCreateCustomer, avatarColor } from "@/lib/db";
 import { Avatar } from "@/components/app/pills";
 import {

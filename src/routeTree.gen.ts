@@ -34,6 +34,7 @@ import { Route as AppFinanceIndexRouteImport } from './routes/_app.finance.index
 import { Route as AppCustomersIndexRouteImport } from './routes/_app.customers.index'
 import { Route as AppOrdersIdRouteImport } from './routes/_app.orders.$id'
 import { Route as AppFinanceJournalRouteImport } from './routes/_app.finance.journal'
+import { Route as AppCustomersTopRouteImport } from './routes/_app.customers.top'
 import { Route as AppCustomersIdRouteImport } from './routes/_app.customers.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -160,6 +161,11 @@ const AppFinanceJournalRoute = AppFinanceJournalRouteImport.update({
   path: '/finance/journal',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCustomersTopRoute = AppCustomersTopRouteImport.update({
+  id: '/top',
+  path: '/top',
+  getParentRoute: () => AppCustomersRoute,
+} as any)
 const AppCustomersIdRoute = AppCustomersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/team': typeof AppTeamRoute
   '/api/assistant': typeof ApiAssistantRoute
   '/customers/$id': typeof AppCustomersIdRoute
+  '/customers/top': typeof AppCustomersTopRoute
   '/finance/journal': typeof AppFinanceJournalRoute
   '/orders/$id': typeof AppOrdersIdRoute
   '/customers/': typeof AppCustomersIndexRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/api/assistant': typeof ApiAssistantRoute
   '/': typeof AppIndexRoute
   '/customers/$id': typeof AppCustomersIdRoute
+  '/customers/top': typeof AppCustomersTopRoute
   '/finance/journal': typeof AppFinanceJournalRoute
   '/orders/$id': typeof AppOrdersIdRoute
   '/customers': typeof AppCustomersIndexRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/api/assistant': typeof ApiAssistantRoute
   '/_app/': typeof AppIndexRoute
   '/_app/customers/$id': typeof AppCustomersIdRoute
+  '/_app/customers/top': typeof AppCustomersTopRoute
   '/_app/finance/journal': typeof AppFinanceJournalRoute
   '/_app/orders/$id': typeof AppOrdersIdRoute
   '/_app/customers/': typeof AppCustomersIndexRoute
@@ -270,6 +279,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/api/assistant'
     | '/customers/$id'
+    | '/customers/top'
     | '/finance/journal'
     | '/orders/$id'
     | '/customers/'
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/api/assistant'
     | '/'
     | '/customers/$id'
+    | '/customers/top'
     | '/finance/journal'
     | '/orders/$id'
     | '/customers'
@@ -323,6 +334,7 @@ export interface FileRouteTypes {
     | '/api/assistant'
     | '/_app/'
     | '/_app/customers/$id'
+    | '/_app/customers/top'
     | '/_app/finance/journal'
     | '/_app/orders/$id'
     | '/_app/customers/'
@@ -513,6 +525,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFinanceJournalRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/customers/top': {
+      id: '/_app/customers/top'
+      path: '/top'
+      fullPath: '/customers/top'
+      preLoaderRoute: typeof AppCustomersTopRouteImport
+      parentRoute: typeof AppCustomersRoute
+    }
     '/_app/customers/$id': {
       id: '/_app/customers/$id'
       path: '/$id'
@@ -525,11 +544,13 @@ declare module '@tanstack/react-router' {
 
 interface AppCustomersRouteChildren {
   AppCustomersIdRoute: typeof AppCustomersIdRoute
+  AppCustomersTopRoute: typeof AppCustomersTopRoute
   AppCustomersIndexRoute: typeof AppCustomersIndexRoute
 }
 
 const AppCustomersRouteChildren: AppCustomersRouteChildren = {
   AppCustomersIdRoute: AppCustomersIdRoute,
+  AppCustomersTopRoute: AppCustomersTopRoute,
   AppCustomersIndexRoute: AppCustomersIndexRoute,
 }
 

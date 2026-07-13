@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
   Bar, BarChart, Cell,
@@ -10,6 +11,7 @@ import {
 import { useCustomers, useOrders, useProducts, useSubscriptions, formatEGP, avatarColor } from "@/lib/db";
 import { StatusPill, Avatar } from "@/components/app/pills";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_app/")({
   component: Dashboard,
@@ -69,17 +71,45 @@ function Dashboard() {
   const activeSubs = subscriptions.filter(s => s.status === "active").length;
   const expiringSubs = subscriptions.filter(s => daysUntil(s.ends_at) <= 14 && daysUntil(s.ends_at) >= 0).slice(0, 5);
 
-  const salesSeries = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(now);
-    d.setDate(now.getDate() - (13 - i));
-    const key = d.toISOString().slice(0, 10);
-    const dayOrders = orders.filter(o => o.created_at.slice(0, 10) === key);
-    return {
-      day: d.toLocaleDateString("ar-EG", { day: "2-digit", month: "short" }),
-      sales: dayOrders.reduce((sum, o) => sum + Number(o.total || 0), 0),
-      profit: dayOrders.reduce((sum, o) => sum + (o.order_items ?? []).reduce((s, item) => s + ((Number(item.unit_price) - Number(item.unit_cost ?? 0)) * Number(item.qty)), 0), 0),
-    };
-  });
+  const [period, setPeriod] = useState<"day" | "week" | "month" | "year">("month");
+
+  const salesSeries = useMemo(() => {
+    const cfg = {
+      day: { buckets: 24, stepMs: 60 * 60 * 1000, label: (d: Date) => `${d.getHours()}:00` },
+      week: { buckets: 7, stepMs: 24 * 60 * 60 * 1000, label: (d: Date) => d.toLocaleDateString("ar-EG", { weekday: "short" }) },
+      month: { buckets: 30, stepMs: 24 * 60 * 60 * 1000, label: (d: Date) => d.toLocaleDateString("ar-EG", { day: "2-digit", month: "short" }) },
+      year: { buckets: 12, stepMs: 0, label: (d: Date) => d.toLocaleDateString("ar-EG", { month: "short" }) },
+    }[period];
+
+    return Array.from({ length: cfg.buckets }, (_, i) => {
+      const start = new Date(now);
+      const end = new Date(now);
+      if (period === "year") {
+        start.setMonth(now.getMonth() - (cfg.buckets - 1 - i), 1);
+        start.setHours(0, 0, 0, 0);
+        end.setMonth(start.getMonth() + 1, 1);
+        end.setHours(0, 0, 0, 0);
+      } else if (period === "day") {
+        start.setHours(now.getHours() - (cfg.buckets - 1 - i), 0, 0, 0);
+        end.setTime(start.getTime() + cfg.stepMs);
+      } else {
+        start.setDate(now.getDate() - (cfg.buckets - 1 - i));
+        start.setHours(0, 0, 0, 0);
+        end.setTime(start.getTime() + cfg.stepMs);
+      }
+      const bucketOrders = orders.filter(o => {
+        const t = new Date(o.created_at).getTime();
+        return t >= start.getTime() && t < end.getTime();
+      });
+      return {
+        day: cfg.label(start),
+        sales: bucketOrders.reduce((sum, o) => sum + Number(o.total || 0), 0),
+        profit: bucketOrders.reduce((sum, o) => sum + (o.order_items ?? []).reduce((s, item) => s + ((Number(item.unit_price) - Number(item.unit_cost ?? 0)) * Number(item.qty)), 0), 0),
+      };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, period]);
+
 
   const productStats = new Map<string, { name: string; sold: number; revenue: number }>();
   orders.forEach(o => (o.order_items ?? []).forEach(item => {
@@ -181,15 +211,22 @@ function Dashboard() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <div className="text-sm font-semibold">المبيعات والأرباح</div>
-              <div className="text-xs text-muted-foreground">آخر 30 يوماً</div>
+              <div className="text-xs text-muted-foreground">
+                {period === "day" ? "آخر 24 ساعة" : period === "week" ? "آخر 7 أيام" : period === "month" ? "آخر 30 يوماً" : "آخر 12 شهراً"}
+              </div>
             </div>
             <div className="flex gap-1 rounded-lg border border-border bg-surface-sunken p-0.5 text-xs">
-              {["يوم", "أسبوع", "شهر", "سنة"].map((t, i) => (
-                <button key={t} className={cn("rounded-md px-2.5 py-1 transition", i === 2 ? "bg-surface font-medium shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+              {([["day","يوم"],["week","أسبوع"],["month","شهر"],["year","سنة"]] as const).map(([k, t]) => (
+                <button
+                  key={k}
+                  onClick={() => setPeriod(k)}
+                  className={cn("rounded-md px-2.5 py-1 transition", period === k ? "bg-surface font-medium shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
+                >
                   {t}
                 </button>
               ))}
             </div>
+
           </div>
           <div className="h-72">
             <ResponsiveContainer>

@@ -34,17 +34,35 @@ function Finance() {
   const { data: allOrders = [], isLoading: ordersLoading } = useOrders();
   const { data: allJournal = [] } = useJournal();
 
-  const [period, setPeriod] = useState<"7" | "30" | "90" | "365" | "all">("30");
-  const periodMs = period === "all" ? Infinity : Number(period) * 24 * 60 * 60 * 1000;
-  const cutoff = Date.now() - periodMs;
+  const [period, setPeriod] = useState<"1" | "7" | "30" | "90" | "365" | "all" | "custom">("30");
+  const [customFrom, setCustomFrom] = useState<string>(() => new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10));
+  const [customTo, setCustomTo] = useState<string>(() => new Date().toISOString().slice(0, 10));
+
+  const { fromMs, toMs, bucketDays, label } = useMemo(() => {
+    if (period === "custom") {
+      const from = new Date(customFrom + "T00:00:00").getTime();
+      const to = new Date(customTo + "T23:59:59").getTime();
+      const days = Math.max(1, Math.round((to - from) / 86400000) + 1);
+      return { fromMs: from, toMs: to, bucketDays: Math.min(days, 90), label: `${customFrom} → ${customTo}` };
+    }
+    if (period === "all") return { fromMs: 0, toMs: Date.now(), bucketDays: 90, label: "كامل السجل" };
+    const n = Number(period);
+    return { fromMs: Date.now() - n * 86400000, toMs: Date.now(), bucketDays: Math.min(n, 90), label: n === 1 ? "آخر 24 ساعة" : `آخر ${n} يوم` };
+  }, [period, customFrom, customTo]);
 
   const orders = useMemo(
-    () => (period === "all" ? allOrders : allOrders.filter(o => new Date(o.created_at).getTime() >= cutoff)),
-    [allOrders, period, cutoff],
+    () => allOrders.filter(o => {
+      const t = new Date(o.created_at).getTime();
+      return t >= fromMs && t <= toMs;
+    }),
+    [allOrders, fromMs, toMs],
   );
   const journal = useMemo(
-    () => (period === "all" ? allJournal : allJournal.filter(e => new Date(e.entry_date).getTime() >= cutoff)),
-    [allJournal, period, cutoff],
+    () => allJournal.filter(e => {
+      const t = new Date(e.entry_date).getTime();
+      return t >= fromMs && t <= toMs;
+    }),
+    [allJournal, fromMs, toMs],
   );
 
   const stats = useMemo(() => {
@@ -68,10 +86,9 @@ function Finance() {
   // Cash flow series over the selected period (capped at 90 buckets for readability)
   const cashSeries = useMemo(() => {
     const days: { day: string; revenue: number; expenses: number }[] = [];
-    const buckets = period === "all" ? 90 : Math.min(Number(period), 90);
-    const now = new Date();
-    for (let i = buckets - 1; i >= 0; i--) {
-      const d = new Date(now);
+    const end = new Date(toMs);
+    for (let i = bucketDays - 1; i >= 0; i--) {
+      const d = new Date(end);
       d.setDate(d.getDate() - i);
       const key = d.toISOString().slice(0, 10);
       const revenue = orders
@@ -83,7 +100,8 @@ function Finance() {
       days.push({ day: d.getDate().toString(), revenue, expenses });
     }
     return days;
-  }, [orders, journal, period]);
+  }, [orders, journal, toMs, bucketDays]);
+
 
 
   const paymentSplit = useMemo(() => {
@@ -128,7 +146,7 @@ function Finance() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex gap-1 rounded-lg border border-border bg-surface-sunken p-0.5 text-xs">
-            {([["7","7 أيام"],["30","30 يوم"],["90","90 يوم"],["365","سنة"],["all","الكل"]] as const).map(([k, t]) => (
+            {([["1","اليوم"],["7","7 أيام"],["30","30 يوم"],["90","90 يوم"],["365","سنة"],["all","الكل"],["custom","مخصص"]] as const).map(([k, t]) => (
               <button
                 key={k}
                 onClick={() => setPeriod(k)}
@@ -138,6 +156,27 @@ function Finance() {
               </button>
             ))}
           </div>
+          {period === "custom" && (
+            <div className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2 py-1 text-xs">
+              <input
+                type="date"
+                value={customFrom}
+                max={customTo}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="bg-transparent px-1 py-0.5 text-foreground outline-none"
+              />
+              <span className="text-muted-foreground">→</span>
+              <input
+                type="date"
+                value={customTo}
+                min={customFrom}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="bg-transparent px-1 py-0.5 text-foreground outline-none"
+              />
+            </div>
+          )}
+
           <Link
             to="/finance/journal"
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground transition hover:bg-accent"
@@ -172,7 +211,7 @@ function Finance() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold">التدفق النقدي</h3>
-              <p className="text-xs text-muted-foreground">{period === "all" ? "كامل السجل" : `آخر ${period} يوم`} — الإيرادات مقابل المصروفات</p>
+              <p className="text-xs text-muted-foreground">{label} — الإيرادات مقابل المصروفات</p>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: "var(--brand-600)" }} />الإيرادات</span>

@@ -4,8 +4,44 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "kodaty:last-activity";
+const SESSION_FLAG = "kodaty:tab-alive";
 const IDLE_MS = 30 * 60 * 1000; // 30 minutes
 const WARN_BEFORE_MS = 60 * 1000; // warn 60s before
+
+/**
+ * Clears any persisted Supabase auth tokens from localStorage synchronously.
+ * Used when the browser/device is closed so the session does not survive restart.
+ */
+function purgeSupabaseTokens() {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith("sb-") && k.endsWith("-auth-token"))) {
+        localStorage.removeItem(k);
+      }
+    }
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Call once at app boot (before reading the Supabase session).
+ * If the previous browser session ended (no sessionStorage flag), wipe tokens
+ * so the user must sign in again after closing the browser/device.
+ */
+export function enforceBrowserSessionOnly() {
+  if (typeof window === "undefined") return;
+  try {
+    if (!sessionStorage.getItem(SESSION_FLAG)) {
+      purgeSupabaseTokens();
+      sessionStorage.setItem(SESSION_FLAG, "1");
+    }
+  } catch {
+    /* ignore */
+  }
+}
 
 /**
  * Signs the user out after IDLE_MS of no activity across any open tab.

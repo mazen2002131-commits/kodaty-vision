@@ -33,14 +33,60 @@ const FILTERS: { key: OrderStatus | "all"; label: string }[] = [
 function OrdersList() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
+  const [showAdv, setShowAdv] = useState(false);
+  const [priority, setPriority] = useState<OrderPriority | "all">("all");
+  const [payment, setPayment] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [minAmt, setMinAmt] = useState("");
+  const [maxAmt, setMaxAmt] = useState("");
   const { data: orders = [], isLoading } = useOrders();
+
+  const advCount =
+    (priority !== "all" ? 1 : 0) +
+    (payment !== "all" ? 1 : 0) +
+    (dateFrom ? 1 : 0) +
+    (dateTo ? 1 : 0) +
+    (minAmt ? 1 : 0) +
+    (maxAmt ? 1 : 0);
 
   const filtered = useMemo(() => orders.filter(o => {
     if (filter !== "all" && o.status !== filter) return false;
+    if (priority !== "all" && o.priority !== priority) return false;
+    if (payment !== "all" && (o.payment_method ?? "") !== payment) return false;
+    if (dateFrom && new Date(o.created_at) < new Date(dateFrom)) return false;
+    if (dateTo) {
+      const end = new Date(dateTo); end.setHours(23, 59, 59, 999);
+      if (new Date(o.created_at) > end) return false;
+    }
+    if (minAmt && Number(o.total) < Number(minAmt)) return false;
+    if (maxAmt && Number(o.total) > Number(maxAmt)) return false;
     if (!q) return true;
     const hay = `${o.code} ${o.customers?.name ?? ""} ${o.order_items?.[0]?.product_name ?? ""}`.toLowerCase();
     return hay.includes(q.toLowerCase());
-  }), [q, filter, orders]);
+  }), [q, filter, orders, priority, payment, dateFrom, dateTo, minAmt, maxAmt]);
+
+  const resetAdv = () => {
+    setPriority("all"); setPayment("all");
+    setDateFrom(""); setDateTo(""); setMinAmt(""); setMaxAmt("");
+  };
+
+  const exportCsv = () => {
+    const rows = [
+      ["الرقم","العميل","المنتج","الحالة","الأولوية","المبلغ","طريقة الدفع","التاريخ"],
+      ...filtered.map(o => [
+        o.code, o.customers?.name ?? "", o.order_items?.[0]?.product_name ?? "",
+        o.status, o.priority, String(o.total), o.payment_method ?? "",
+        new Date(o.created_at).toISOString(),
+      ]),
+    ];
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `orders-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  };
 
   const relative = (iso: string) => {
     const s = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -58,7 +104,7 @@ function OrdersList() {
           <p className="text-sm text-muted-foreground num">{filtered.length} طلب</p>
         </div>
         <div className="flex gap-2">
-          <button className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-accent">
+          <button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-accent">
             <Download className="h-4 w-4" /> تصدير
           </button>
           <NewOrderButton />
@@ -88,16 +134,95 @@ function OrdersList() {
               >{f.label}</button>
             ))}
           </div>
-          <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-sunken px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground">
+          <button
+            onClick={() => setShowAdv(v => !v)}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition",
+              showAdv || advCount > 0
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-surface-sunken text-muted-foreground hover:text-foreground",
+            )}
+          >
             <Filter className="h-3.5 w-3.5" /> فلاتر متقدمة
+            {advCount > 0 && (
+              <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground num">{advCount}</span>
+            )}
           </button>
         </div>
+
+        {showAdv && (
+          <div className="border-b border-border bg-surface-sunken/40 p-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <label className="space-y-1 text-xs">
+                <span className="text-muted-foreground">الأولوية</span>
+                <select value={priority} onChange={e => setPriority(e.target.value as OrderPriority | "all")}
+                  className="w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-primary">
+                  <option value="all">الكل</option>
+                  <option value="low">منخفضة</option>
+                  <option value="normal">عادية</option>
+                  <option value="high">مرتفعة</option>
+                  <option value="urgent">عاجلة</option>
+                </select>
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="text-muted-foreground">طريقة الدفع</span>
+                <select value={payment} onChange={e => setPayment(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-primary">
+                  <option value="all">الكل</option>
+                  <option value="">غير محدد</option>
+                  <option value="cash">نقدي</option>
+                  <option value="instapay">إنستا باي</option>
+                  <option value="vodafone_cash">فودافون كاش</option>
+                  <option value="bank_transfer">تحويل بنكي</option>
+                  <option value="visa">فيزا / ماستر</option>
+                  <option value="paypal">PayPal</option>
+                  <option value="usdt">USDT / كريبتو</option>
+                  <option value="other">أخرى</option>
+                </select>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="space-y-1 text-xs">
+                  <span className="text-muted-foreground">من تاريخ</span>
+                  <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-primary" />
+                </label>
+                <label className="space-y-1 text-xs">
+                  <span className="text-muted-foreground">إلى تاريخ</span>
+                  <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-primary" />
+                </label>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="space-y-1 text-xs">
+                  <span className="text-muted-foreground">أقل مبلغ</span>
+                  <input type="number" min={0} value={minAmt} onChange={e => setMinAmt(e.target.value)}
+                    placeholder="0"
+                    className="w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-primary" />
+                </label>
+                <label className="space-y-1 text-xs">
+                  <span className="text-muted-foreground">أعلى مبلغ</span>
+                  <input type="number" min={0} value={maxAmt} onChange={e => setMaxAmt(e.target.value)}
+                    placeholder="∞"
+                    className="w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-primary" />
+                </label>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+              <span>عدد النتائج: <span className="num text-foreground">{filtered.length}</span></span>
+              <button
+                onClick={resetAdv}
+                disabled={advCount === 0}
+                className="rounded-md border border-border bg-surface px-2.5 py-1 hover:text-foreground disabled:opacity-50"
+              >تفريغ الفلاتر</button>
+            </div>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="grid place-items-center py-16 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /></div>
         ) : filtered.length === 0 ? (
           <div className="grid place-items-center py-16 text-center text-sm text-muted-foreground">
-            لا توجد طلبات. ابدأ بإنشاء أول طلب.
+            لا توجد طلبات مطابقة.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -127,6 +252,7 @@ function OrdersList() {
     </div>
   );
 }
+
 
 function NewOrderButton() {
   const search = Route.useSearch();

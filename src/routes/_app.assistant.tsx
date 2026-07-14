@@ -20,30 +20,93 @@ const suggestions = [
 
 async function buildLiveContext(): Promise<string> {
   try {
-    const since = new Date(Date.now() - 30 * 864e5).toISOString();
-    const [orders, customers, licenses, subs] = await Promise.all([
-      supabase.from("orders").select("total_amount,status,created_at").gte("created_at", since),
+    const now = Date.now();
+    const since30 = new Date(now - 30 * 864e5).toISOString();
+    const since7 = new Date(now - 7 * 864e5).toISOString();
+    const [orders30, orders7, customersCount, licenses, subs, products, topOrders] = await Promise.all([
+      supabase.from("orders").select("total,status,created_at").gte("created_at", since30),
+      supabase.from("orders").select("total,status,created_at,order_items(product_name,qty,unit_price)").gte("created_at", since7),
       supabase.from("customers").select("id", { count: "exact", head: true }),
-      supabase.from("licenses").select("status"),
-      supabase.from("subscriptions").select("status,end_date"),
+      supabase.from("licenses").select("status,product_name"),
+      supabase.from("subscriptions").select("status,ends_at,product_name,customers(name)"),
+      supabase.from("products").select("name,price,billing_type,active"),
+      supabase.from("orders").select("total,customers(name)").order("total", { ascending: false }).limit(5),
     ]);
-    const rev = (orders.data ?? [])
-      .filter((o: any) => o.status === "paid" || o.status === "fulfilled")
-      .reduce((s: number, o: any) => s + Number(o.total_amount ?? 0), 0);
-    const ordersCount = orders.data?.length ?? 0;
-    const available = (licenses.data ?? []).filter((l: any) => l.status === "available").length;
-    const sold = (licenses.data ?? []).filter((l: any) => l.status === "sold").length;
-    const soon = (subs.data ?? []).filter(
-      (s: any) => s.end_date && new Date(s.end_date).getTime() - Date.now() < 7 * 864e5,
-    ).length;
-    return [
-      `- إيرادات آخر 30 يوم: ${rev.toLocaleString("ar-EG")} ج.م عبر ${ordersCount} طلب`,
-      `- عدد العملاء الكلي: ${customers.count ?? 0}`,
-      `- مفاتيح متاحة: ${available} · مباعة: ${sold}`,
-      `- اشتراكات تنتهي خلال 7 أيام: ${soon}`,
-    ].join("\n");
-  } catch {
-    return "";
+
+    const paid = new Set(["delivered", "paid", "fulfilled", "processing"]);
+    const sum = (rows: any[]) => rows.filter((o) => paid.has(o.status)).reduce((s, o) => s + Number(o.total ?? 0), 0);
+    const rev30 = sum(orders30.data ?? []);
+    const rev7 = sum(orders7.data ?? []);
+
+    const prodTotals: Record<string, { qty: number; revenue: number }> = {};
+    for (const o of orders7.data ?? []) {
+      if (!paid.has((o as any).status)) continue;
+      for (const it of ((o as any).order_items ?? []) as any[]) {
+        const key = it.product_name || "غير محدد";
+        prodTotals[key] ??= { qty: 0, revenue: 0 };
+        prodTotals[key].qty += Number(it.qty ?? 0);
+        prodTotals[key].revenue += Number(it.qty ?? 0) * Number(it.unit_price ?? 0);
+      }
+    }
+    const topProducts7 = Object.entries(prodTotals).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 5);
+
+    const licByProduct: Record<string, { available: number; sold: number }> = {};
+    for (const l of licenses.data ?? []) {
+      const key = (l as any).product_name || "غير محدد";
+      licByProduct[key] ??= { available: 0, sold: 0 };
+      if ((l as any).status === "available") licByProduct[key].available++;
+      else if ((l as any).status === "sold") licByProduct[key].sold++;
+    }
+    const availTotal = Object.values(licByProduct).reduce((s, v) => s + v.available, 0);
+    const soldTotal = Object.values(licByProduct).reduce((s, v) => s + v.sold, 0);
+
+    const expiringSoon = (subs.data ?? []).filter((s: any) => {
+      if (!s.ends_at) return false;
+      const d = new Date(s.ends_at).getTime() - now;
+      return d > 0 && d < 7 * 864e5;
+    });
+
+    const fmt = (n: number) => n.toLocaleString("ar-EG");
+    const L: string[] = [];
+    L.push(`## مؤشرات عامة`);
+    L.push(`- إيرادات آخر 7 أيام: ${fmt(rev7)} ج.م عبر ${(orders7.data ?? []).length} طلب`);
+    L.push(`- إيرادات آخر 30 يوم: ${fmt(rev30)} ج.م عبر ${(orders30.data ?? []).length} طلب`);
+    L.push(`- عدد العملاء الكلي: ${customersCount.count ?? 0}`);
+    L.push(`- مفاتيح تراخيص — متاحة: ${availTotal} · مباعة: ${soldTotal}`);
+    L.push(`- اشتراكات تنتهي خلال 7 أيام: ${expiringSoon.length}`);
+
+    L.push(`\n## أفضل المنتجات مبيعاً — آخر 7 أيام`);
+    if (topProducts7.length) {
+      topProducts7.forEach(([n, v], i) => L.push(`${i + 1}. ${n} — ${v.qty} وحدة · ${fmt(v.revenue)} ج.م`));
+    } else L.push(`- لا توجد مبيعات مسجّلة خلال آخر 7 أيام.`);
+
+    if (Object.keys(licByProduct).length) {
+      L.push(`\n## مخزون التراخيص حسب المنتج`);
+      for (const [n, v] of Object.entries(licByProduct)) L.push(`- ${n}: متاح ${v.available} · مباع ${v.sold}`);
+    }
+
+    if (expiringSoon.length) {
+      L.push(`\n## اشتراكات على وشك الانتهاء`);
+      for (const s of expiringSoon.slice(0, 10)) {
+        const days = Math.ceil((new Date((s as any).ends_at).getTime() - now) / 864e5);
+        L.push(`- ${(s as any).customers?.name ?? "—"} · ${(s as any).product_name} · خلال ${days} يوم`);
+      }
+    }
+
+    const activeProducts = (products.data ?? []).filter((p: any) => p.active);
+    if (activeProducts.length) {
+      L.push(`\n## كتالوج المنتجات النشطة`);
+      for (const p of activeProducts.slice(0, 20)) L.push(`- ${(p as any).name} — ${fmt(Number((p as any).price))} ج.م (${(p as any).billing_type})`);
+    }
+
+    if ((topOrders.data ?? []).length) {
+      L.push(`\n## أعلى الطلبات قيمةً`);
+      for (const o of topOrders.data ?? []) L.push(`- ${(o as any).customers?.name ?? "—"} — ${fmt(Number((o as any).total))} ج.م`);
+    }
+
+    return L.join("\n");
+  } catch (e) {
+    return `تعذّر تحميل سياق البيانات: ${(e as Error).message}`;
   }
 }
 

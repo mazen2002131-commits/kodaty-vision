@@ -318,6 +318,9 @@ function SubsPage() {
                               {s.auto_renew ? "مفعّل" : "معطّل"}
                             </span>
                           </td>
+                          <td className="px-3 py-3">
+                            <RowActions id={s.id} productName={s.product_name} customerName={cname} />
+                          </td>
                         </tr>
                       );
                     })}

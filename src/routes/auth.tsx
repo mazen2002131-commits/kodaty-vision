@@ -97,38 +97,60 @@ function AuthPage() {
             </div>
           </div>
 
-          <h1 className="text-2xl font-semibold tracking-tight">أهلاً بعودتك</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {mode === "forgot" ? "إعادة تعيين كلمة المرور" : "أهلاً بعودتك"}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            سجّل الدخول للوصول إلى مساحتك.
+            {mode === "forgot"
+              ? "أدخل بريدك الإلكتروني وسنرسل لك رابطاً آمناً لإعادة التعيين."
+              : "سجّل الدخول للوصول إلى مساحتك."}
           </p>
 
-          <button
-            type="button"
-            onClick={google}
-            disabled={busy}
-            className="mt-6 flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium shadow-sm transition hover:bg-muted/50 disabled:opacity-60"
-          >
-            <GoogleIcon />
-            متابعة عبر Google
-          </button>
+          {mode === "signin" && (
+            <>
+              <button
+                type="button"
+                onClick={google}
+                disabled={busy}
+                className="mt-6 flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium shadow-sm transition hover:bg-muted/50 disabled:opacity-60"
+              >
+                <GoogleIcon />
+                متابعة عبر Google
+              </button>
 
-          <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-            <div className="h-px flex-1 bg-border" /> أو <div className="h-px flex-1 bg-border" />
-          </div>
+              <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="h-px flex-1 bg-border" /> أو <div className="h-px flex-1 bg-border" />
+              </div>
+            </>
+          )}
 
-          <form onSubmit={submit} className="space-y-3">
+          <form onSubmit={submit} className={mode === "signin" ? "space-y-3" : "mt-6 space-y-3"}>
             <Field label="البريد الإلكتروني">
               <input
                 type="email" required value={email} onChange={e => setEmail(e.target.value)}
                 className="input" placeholder="you@example.com" dir="ltr"
               />
             </Field>
-            <Field label="كلمة المرور">
-              <input
-                type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)}
-                className="input" placeholder="••••••••" dir="ltr"
-              />
-            </Field>
+            {mode === "signin" && (
+              <Field label="كلمة المرور">
+                <input
+                  type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)}
+                  className="input" placeholder="••••••••" dir="ltr"
+                />
+              </Field>
+            )}
+
+            {mode === "signin" && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => { setMode("forgot"); setError(null); setInfo(null); }}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  نسيت كلمة المرور؟
+                </button>
+              </div>
+            )}
 
             {error && <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
             {info && <p className="rounded-md bg-emerald-50 px-3 py-2 text-xs text-emerald-700">{info}</p>}
@@ -138,8 +160,18 @@ function AuthPage() {
               className="flex w-full items-center justify-center gap-2 rounded-lg brand-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-brand transition hover:opacity-95 disabled:opacity-60"
             >
               {busy && <Loader2 className="size-4 animate-spin" />}
-              تسجيل الدخول
+              {mode === "forgot" ? "إرسال رابط إعادة التعيين" : "تسجيل الدخول"}
             </button>
+
+            {mode === "forgot" && (
+              <button
+                type="button"
+                onClick={() => { setMode("signin"); setError(null); setInfo(null); }}
+                className="w-full text-center text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                ← العودة لتسجيل الدخول
+              </button>
+            )}
           </form>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
@@ -154,6 +186,7 @@ function AuthPage() {
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-foreground">{label}</span>

@@ -20,6 +20,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const [mode, setMode] = useState<"signin" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -36,15 +37,24 @@ function AuthPage() {
     e.preventDefault();
     setError(null); setInfo(null); setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      navigate({ to: "/" });
+      if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        setInfo("إذا كان البريد مسجّلاً لدينا، فسنرسل رابط إعادة تعيين آمن خلال دقائق. تحقّق من صندوق الوارد ومجلّد الرسائل غير المرغوب فيها.");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        navigate({ to: "/" });
+      }
     } catch (err: any) {
       setError(err?.message ?? "حدث خطأ غير متوقع");
     } finally {
       setBusy(false);
     }
   };
+
 
   const google = async () => {
     setError(null); setBusy(true);

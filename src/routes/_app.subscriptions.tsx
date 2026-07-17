@@ -257,6 +257,7 @@ function SubsPage() {
                       <th className="px-3 py-3 text-start font-medium">المدة</th>
                       <th className="px-3 py-3 text-start font-medium">سعر التجديد</th>
                       <th className="px-4 py-3 text-start font-medium">تجديد تلقائي</th>
+                      <th className="px-3 py-3 text-end font-medium">إجراءات</th>
                     </tr>
                   </thead>
                   <tbody>

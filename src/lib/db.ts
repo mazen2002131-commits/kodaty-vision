@@ -452,6 +452,38 @@ export function useCreateSubscription() {
   });
 }
 
+export function useRenewSubscription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, months, from }: { id: string; months: number; from?: "today" | "current_end" }) => {
+      const { data: sub, error: e0 } = await supabase.from("subscriptions").select("ends_at").eq("id", id).maybeSingle();
+      if (e0) throw e0;
+      const base = from === "today"
+        ? new Date()
+        : new Date(Math.max(new Date(sub?.ends_at ?? Date.now()).getTime(), Date.now()));
+      const ends = new Date(base);
+      ends.setMonth(ends.getMonth() + months);
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({ ends_at: ends.toISOString(), status: "active" })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["subscriptions"] }),
+  });
+}
+
+export function useDeleteSubscription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("subscriptions").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["subscriptions"] }),
+  });
+}
+
 // ---------- Licenses ----------
 export type License = {
   id: string;

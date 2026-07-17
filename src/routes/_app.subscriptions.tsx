@@ -2,13 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
 import {
   RefreshCw, AlertTriangle, CheckCircle2, XCircle, Loader2,
-  Search, Filter, Download, Plus, Calendar, TrendingUp, Sparkles,
+  Search, Filter, Download, Plus, Calendar, TrendingUp, Sparkles, Trash2, MoreHorizontal,
 } from "lucide-react";
-import { useSubscriptions, useCreateSubscription, useCustomers, useProducts, formatEGP, daysBetween, avatarColor } from "@/lib/db";
+import { useSubscriptions, useCreateSubscription, useCustomers, useProducts, useRenewSubscription, useDeleteSubscription, formatEGP, daysBetween, avatarColor } from "@/lib/db";
 import { Avatar } from "@/components/app/pills";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";

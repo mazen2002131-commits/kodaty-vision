@@ -409,6 +409,112 @@ function FilterChip({
   );
 }
 
+function RowActions({ id, productName, customerName }: { id: string; productName: string; customerName: string }) {
+  const renew = useRenewSubscription();
+  const del = useDeleteSubscription();
+  const [renewOpen, setRenewOpen] = useState(false);
+  const [months, setMonths] = useState<number>(1);
+  const [from, setFrom] = useState<"current_end" | "today">("current_end");
+
+  return (
+    <div className="flex items-center justify-end gap-1">
+      <Dialog open={renewOpen} onOpenChange={setRenewOpen}>
+        <DialogTrigger asChild>
+          <Button size="sm" variant="outline" className="h-8 gap-1.5">
+            <RefreshCw className="h-3.5 w-3.5" /> تجديد
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>تجديد الاشتراك</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="text-muted-foreground">
+              <span className="font-medium text-foreground">{customerName}</span> — {productName}
+            </div>
+            <div className="space-y-1.5">
+              <Label>المدة</Label>
+              <Select value={String(months)} onValueChange={(v) => setMonths(Number(v))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">شهر واحد</SelectItem>
+                  <SelectItem value="3">3 أشهر</SelectItem>
+                  <SelectItem value="6">6 أشهر</SelectItem>
+                  <SelectItem value="12">سنة</SelectItem>
+                  <SelectItem value="18">18 شهر</SelectItem>
+                  <SelectItem value="24">سنتان</SelectItem>
+                  <SelectItem value="36">3 سنوات</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>احتساب المدة من</Label>
+              <Select value={from} onValueChange={(v) => setFrom(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current_end">تاريخ الانتهاء الحالي</SelectItem>
+                  <SelectItem value="today">اليوم</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenewOpen(false)}>إلغاء</Button>
+            <Button
+              onClick={async () => {
+                try {
+                  await renew.mutateAsync({ id, months, from });
+                  toast.success("تم تجديد الاشتراك");
+                  setRenewOpen(false);
+                } catch (e: any) {
+                  toast.error(e.message ?? "فشل التجديد");
+                }
+              }}
+              disabled={renew.isPending}
+            >
+              {renew.isPending ? "جارٍ التجديد…" : "تأكيد التجديد"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-500/10">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>حذف الاشتراك؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم حذف اشتراك <span className="font-medium">{customerName}</span> لمنتج <span className="font-medium">{productName}</span> نهائياً.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                try {
+                  await del.mutateAsync(id);
+                  toast.success("تم حذف الاشتراك");
+                } catch (e: any) {
+                  toast.error(e.message ?? "فشل الحذف");
+                }
+              }}
+              className="bg-rose-600 hover:bg-rose-700"
+            >
+              حذف نهائي
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+
+
 function toDateInput(d: Date) {
   return d.toISOString().slice(0, 10);
 }

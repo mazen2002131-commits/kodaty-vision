@@ -103,6 +103,22 @@ function Finance() {
     return days;
   }, [orders, journal, toMs, bucketDays]);
 
+  const expenseByCategory = useMemo(() => {
+    const map = new Map<string, number>();
+    journal.filter(e => e.debit_account.startsWith("5")).forEach(e => {
+      map.set(e.debit_account, (map.get(e.debit_account) ?? 0) + Number(e.amount));
+    });
+    const total = Array.from(map.values()).reduce((s, v) => s + v, 0) || 1;
+    return Array.from(map.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([code, amount]) => ({
+        code,
+        label: EXPENSE_CATEGORIES.find(c => c.code === code)?.label ?? code,
+        amount,
+        pct: Math.round((amount / total) * 100),
+      }));
+  }, [journal]);
+
 
 
   const paymentSplit = useMemo(() => {

@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
+import { AddExpenseDialog, EXPENSE_CATEGORIES } from "@/components/app/expense-dialog";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/finance/")({

@@ -9,7 +9,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { AddExpenseDialog } from "@/components/app/expense-dialog";
+import { AddExpenseDialog, AddStockPurchaseDialog } from "@/components/app/expense-dialog";
 
 export const Route = createFileRoute("/_app/finance/journal")({
   component: () => (<RequireAdmin><JournalPage /></RequireAdmin>),

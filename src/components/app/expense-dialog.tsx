@@ -177,8 +177,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 // ============================================================
-// Stock Purchase dialog: debit 1400 (Inventory) / credit source
-// Reduces cash immediately; becomes COGS automatically when sold.
+// Stock Purchase dialog: debit 5050 (Purchases) / credit source
+// Treated as immediate expense — reduces net profit right away.
 // ============================================================
 export function AddStockPurchaseDialog({ variant = "primary", label = "شراء بضاعة" }: Props) {
   const qc = useQueryClient();
@@ -202,7 +202,7 @@ export function AddStockPurchaseDialog({ variant = "primary", label = "شراء 
       const payload = {
         entry_date: form.entry_date,
         description: desc,
-        debit_account: "1400",
+        debit_account: "5050",
         credit_account: form.source,
         amount: Number(form.amount),
         reference: form.reference.trim() || null,
@@ -216,8 +216,9 @@ export function AddStockPurchaseDialog({ variant = "primary", label = "شراء 
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["journal_entries"] });
       toast.success("تم تسجيل شراء البضاعة", {
-        description: "قلّل الكاش وأضاف الرصيد للمخزون. سيتحوّل تلقائياً لتكلفة البضاعة عند البيع.",
+        description: "قلّل الكاش وأثّر مباشرة على صافي الربح كمصروف مشتريات.",
       });
+
       setOpen(false);
       setForm({
         entry_date: new Date().toISOString().slice(0, 10),

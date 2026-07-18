@@ -102,6 +102,7 @@ function JournalPage() {
           <button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-secondary">
             <Download className="h-4 w-4" /> تصدير
           </button>
+          <AddStockPurchaseDialog variant="secondary" />
           <AddExpenseDialog variant="secondary" />
           <NewJournalDialog />
         </div>

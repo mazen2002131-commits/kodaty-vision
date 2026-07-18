@@ -7,6 +7,7 @@ import {
 import { useLicenses, useProducts } from "@/lib/db";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { AddStockPurchaseDialog } from "@/components/app/expense-dialog";
 
 export const Route = createFileRoute("/_app/inventory")({
   component: Inventory,

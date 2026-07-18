@@ -373,9 +373,9 @@ function useJournal() {
     queryFn: async () => {
       const { data, error } = await (supabase as never as ReturnType<typeof supabase.from>)
         .from("journal_entries" as never)
-        .select("id, entry_date, debit_account, credit_account, amount");
+        .select("id, entry_date, debit_account, credit_account, amount, description, reference");
       if (error) throw error;
-      return (data ?? []) as { id: string; entry_date: string; debit_account: string; credit_account: string; amount: number }[];
+      return (data ?? []) as { id: string; entry_date: string; debit_account: string; credit_account: string; amount: number; description: string; reference: string | null }[];
     },
   });
 }

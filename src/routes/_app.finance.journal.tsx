@@ -9,7 +9,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { AddExpenseDialog } from "@/components/app/expense-dialog";
+import { AddExpenseDialog, AddStockPurchaseDialog } from "@/components/app/expense-dialog";
 
 export const Route = createFileRoute("/_app/finance/journal")({
   component: () => (<RequireAdmin><JournalPage /></RequireAdmin>),
@@ -102,6 +102,7 @@ function JournalPage() {
           <button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-secondary">
             <Download className="h-4 w-4" /> تصدير
           </button>
+          <AddStockPurchaseDialog variant="secondary" />
           <AddExpenseDialog variant="secondary" />
           <NewJournalDialog />
         </div>

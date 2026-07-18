@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, Receipt } from "lucide-react";
+import { Loader2, Plus, Receipt, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -171,5 +171,149 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1 block text-xs font-medium text-muted-foreground">{label}</span>
       {children}
     </label>
+  );
+}
+
+// ============================================================
+// Stock Purchase dialog: debit 1400 (Inventory) / credit source
+// Reduces cash immediately; becomes COGS automatically when sold.
+// ============================================================
+export function AddStockPurchaseDialog({ variant = "primary", label = "شراء بضاعة" }: Props) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    entry_date: new Date().toISOString().slice(0, 10),
+    source: "1010",
+    amount: "",
+    qty: "",
+    supplier: "",
+    description: "",
+    reference: "",
+    notes: "",
+  });
+
+  const create = useMutation({
+    mutationFn: async () => {
+      const { data: userRes } = await supabase.auth.getUser();
+      const desc = form.description.trim() ||
+        `شراء بضاعة${form.qty ? ` (${form.qty} وحدة)` : ""}${form.supplier ? ` — ${form.supplier}` : ""}`;
+      const payload = {
+        entry_date: form.entry_date,
+        description: desc,
+        debit_account: "1400",
+        credit_account: form.source,
+        amount: Number(form.amount),
+        reference: form.reference.trim() || null,
+        notes: form.notes.trim() || null,
+        created_by: userRes.user?.id ?? null,
+      };
+      const { error } = await (supabase as never as ReturnType<typeof supabase.from>)
+        .from("journal_entries" as never).insert(payload as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["journal_entries"] });
+      toast.success("تم تسجيل شراء البضاعة", {
+        description: "قلّل الكاش وأضاف الرصيد للمخزون. سيتحوّل تلقائياً لتكلفة البضاعة عند البيع.",
+      });
+      setOpen(false);
+      setForm({
+        entry_date: new Date().toISOString().slice(0, 10),
+        source: "1010", amount: "", qty: "", supplier: "", description: "", reference: "", notes: "",
+      });
+    },
+    onError: (e: Error) => toast.error("تعذّر التسجيل", { description: e.message }),
+  });
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.amount || Number(form.amount) <= 0) {
+      toast.error("أدخل مبلغاً صحيحاً");
+      return;
+    }
+    create.mutate();
+  };
+
+  const input = "w-full rounded-lg border border-border bg-surface-sunken px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
+
+  const trigger = variant === "primary" ? (
+    <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-95">
+      <Plus className="h-4 w-4" /> {label}
+    </button>
+  ) : (
+    <button className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground transition hover:bg-accent">
+      <Package className="h-4 w-4" /> {label}
+    </button>
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>تسجيل شراء بضاعة (مخزون)</DialogTitle>
+          <p className="text-xs text-muted-foreground">
+            يُنقص الكاش ويُضاف إلى المخزون. لا يظهر كمصروف الآن — يتحوّل تلقائياً إلى
+            <strong> تكلفة البضاعة المباعة (COGS) </strong> عند بيع المفاتيح.
+          </p>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="التاريخ *">
+              <input type="date" required value={form.entry_date}
+                onChange={e => setForm({ ...form, entry_date: e.target.value })} className={input} />
+            </Field>
+            <Field label="إجمالي المبلغ (ج.م) *">
+              <input type="number" step="0.01" min="0.01" required value={form.amount}
+                onChange={e => setForm({ ...form, amount: e.target.value })} className={input} />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="عدد الوحدات">
+              <input type="number" min="0" value={form.qty}
+                onChange={e => setForm({ ...form, qty: e.target.value })}
+                placeholder="مثال: 50 مفتاح" className={input} />
+            </Field>
+            <Field label="المورّد">
+              <input value={form.supplier}
+                onChange={e => setForm({ ...form, supplier: e.target.value })}
+                placeholder="اسم المورد" className={input} />
+            </Field>
+          </div>
+          <Field label="مصدر الدفع *">
+            <select required value={form.source}
+              onChange={e => setForm({ ...form, source: e.target.value })} className={input}>
+              {PAYMENT_SOURCES.map(s => (
+                <option key={s.code} value={s.code}>{s.label}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="البيان">
+            <input value={form.description}
+              onChange={e => setForm({ ...form, description: e.target.value })}
+              placeholder="مثال: شراء 100 مفتاح Windows 11" className={input} />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="رقم الفاتورة / المرجع">
+              <input value={form.reference}
+                onChange={e => setForm({ ...form, reference: e.target.value })} className={input} />
+            </Field>
+            <Field label="ملاحظات">
+              <input value={form.notes}
+                onChange={e => setForm({ ...form, notes: e.target.value })} className={input} />
+            </Field>
+          </div>
+          <DialogFooter>
+            <button type="button" onClick={() => setOpen(false)}
+              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-accent">إلغاء</button>
+            <button type="submit" disabled={create.isPending}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60">
+              {create.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              حفظ الشراء
+            </button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
-import { AddExpenseDialog, EXPENSE_CATEGORIES } from "@/components/app/expense-dialog";
+import { AddExpenseDialog, AddStockPurchaseDialog, EXPENSE_CATEGORIES } from "@/components/app/expense-dialog";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/finance/")({
@@ -206,6 +206,7 @@ function Finance() {
           >
             <Download className="h-4 w-4" /> تصدير CSV
           </button>
+          <AddStockPurchaseDialog variant="secondary" />
           <AddExpenseDialog variant="secondary" />
           <NewInvoiceDialog />
         </div>

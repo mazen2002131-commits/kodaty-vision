@@ -254,12 +254,13 @@ export function AddStockPurchaseDialog({ variant = "primary", label = "شراء 
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>تسجيل شراء بضاعة (مخزون)</DialogTitle>
+          <DialogTitle>تسجيل شراء بضاعة</DialogTitle>
           <p className="text-xs text-muted-foreground">
-            يُنقص الكاش ويُضاف إلى المخزون. لا يظهر كمصروف الآن — يتحوّل تلقائياً إلى
-            <strong> تكلفة البضاعة المباعة (COGS) </strong> عند بيع المفاتيح.
+            يُنقص الكاش ويُسجَّل كـ<strong> مصروف مشتريات </strong>
+            يؤثر فوراً على صافي الربح وهامش الربح في لوحة المالية.
           </p>
         </DialogHeader>
+
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <Field label="التاريخ *">

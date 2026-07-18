@@ -9,6 +9,7 @@ import {
 
 // Expense categories → debit account code (5xxx)
 export const EXPENSE_CATEGORIES: { code: string; label: string }[] = [
+  { code: "5050", label: "مشتريات بضاعة (مخزون)" },
   { code: "5100", label: "مصاريف تشغيلية" },
   { code: "5200", label: "عمولات وسائل الدفع" },
   { code: "5300", label: "رواتب وأجور" },
@@ -19,6 +20,7 @@ export const EXPENSE_CATEGORIES: { code: string; label: string }[] = [
   { code: "5800", label: "معدات وأجهزة" },
   { code: "5900", label: "مصاريف أخرى" },
 ];
+
 
 // Payment source → credit account code
 const PAYMENT_SOURCES: { code: string; label: string }[] = [

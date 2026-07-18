@@ -109,6 +109,7 @@ function Inventory() {
             </div>
             <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight">إدارة المخزون</h1>
             <p className="mt-1 text-sm text-white/70">راقب مستوى المفاتيح المتاحة لكل منتج وتصرّف قبل النفاد.</p>
+            <div className="mt-4"><AddStockPurchaseDialog variant="primary" label="تسجيل شراء بضاعة" /></div>
           </div>
           <div className="flex items-center gap-6 text-white/90">
             <div>

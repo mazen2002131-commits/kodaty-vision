@@ -9,6 +9,7 @@ import {
 
 // Expense categories → debit account code (5xxx)
 export const EXPENSE_CATEGORIES: { code: string; label: string }[] = [
+  { code: "5050", label: "مشتريات بضاعة (مخزون)" },
   { code: "5100", label: "مصاريف تشغيلية" },
   { code: "5200", label: "عمولات وسائل الدفع" },
   { code: "5300", label: "رواتب وأجور" },
@@ -19,6 +20,7 @@ export const EXPENSE_CATEGORIES: { code: string; label: string }[] = [
   { code: "5800", label: "معدات وأجهزة" },
   { code: "5900", label: "مصاريف أخرى" },
 ];
+
 
 // Payment source → credit account code
 const PAYMENT_SOURCES: { code: string; label: string }[] = [
@@ -175,8 +177,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 // ============================================================
-// Stock Purchase dialog: debit 1400 (Inventory) / credit source
-// Reduces cash immediately; becomes COGS automatically when sold.
+// Stock Purchase dialog: debit 5050 (Purchases) / credit source
+// Treated as immediate expense — reduces net profit right away.
 // ============================================================
 export function AddStockPurchaseDialog({ variant = "primary", label = "شراء بضاعة" }: Props) {
   const qc = useQueryClient();
@@ -200,7 +202,7 @@ export function AddStockPurchaseDialog({ variant = "primary", label = "شراء 
       const payload = {
         entry_date: form.entry_date,
         description: desc,
-        debit_account: "1400",
+        debit_account: "5050",
         credit_account: form.source,
         amount: Number(form.amount),
         reference: form.reference.trim() || null,
@@ -214,8 +216,9 @@ export function AddStockPurchaseDialog({ variant = "primary", label = "شراء 
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["journal_entries"] });
       toast.success("تم تسجيل شراء البضاعة", {
-        description: "قلّل الكاش وأضاف الرصيد للمخزون. سيتحوّل تلقائياً لتكلفة البضاعة عند البيع.",
+        description: "قلّل الكاش وأثّر مباشرة على صافي الربح كمصروف مشتريات.",
       });
+
       setOpen(false);
       setForm({
         entry_date: new Date().toISOString().slice(0, 10),
@@ -251,12 +254,13 @@ export function AddStockPurchaseDialog({ variant = "primary", label = "شراء 
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>تسجيل شراء بضاعة (مخزون)</DialogTitle>
+          <DialogTitle>تسجيل شراء بضاعة</DialogTitle>
           <p className="text-xs text-muted-foreground">
-            يُنقص الكاش ويُضاف إلى المخزون. لا يظهر كمصروف الآن — يتحوّل تلقائياً إلى
-            <strong> تكلفة البضاعة المباعة (COGS) </strong> عند بيع المفاتيح.
+            يُنقص الكاش ويُسجَّل كـ<strong> مصروف مشتريات </strong>
+            يؤثر فوراً على صافي الربح وهامش الربح في لوحة المالية.
           </p>
         </DialogHeader>
+
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <Field label="التاريخ *">

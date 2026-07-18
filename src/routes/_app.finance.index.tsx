@@ -280,30 +280,58 @@ function Finance() {
         </div>
       </div>
 
-      {/* Expenses trend */}
-      <div className="surface-elevated p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-semibold">المصروفات اليومية</h3>
-            <p className="text-xs text-muted-foreground">من القيود المحاسبية (حسابات 5xxx)</p>
+      {/* Expenses trend + breakdown */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="surface-elevated p-5 lg:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold">المصروفات اليومية</h3>
+              <p className="text-xs text-muted-foreground">من القيود المحاسبية (حسابات 5xxx)</p>
+            </div>
+            <Link to="/finance/journal" className="text-xs font-medium text-primary hover:underline">إدارة القيود ←</Link>
           </div>
-          <Link to="/finance/journal" className="text-xs font-medium text-primary hover:underline">إدارة القيود ←</Link>
+          <div className="h-[220px]">
+            <ResponsiveContainer>
+              <BarChart data={cashSeries}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.4} />
+                <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} />
+                <YAxis stroke="var(--color-muted-foreground)" fontSize={11} width={50} />
+                <Tooltip
+                  contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 10, fontSize: 12 }}
+                  formatter={(v: number) => formatEGP(v)}
+                />
+                <Bar dataKey="expenses" fill="var(--brand-600)" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-        <div className="h-[180px]">
-          <ResponsiveContainer>
-            <BarChart data={cashSeries}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.4} />
-              <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} />
-              <YAxis stroke="var(--color-muted-foreground)" fontSize={11} width={50} />
-              <Tooltip
-                contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 10, fontSize: 12 }}
-                formatter={(v: number) => formatEGP(v)}
-              />
-              <Bar dataKey="expenses" fill="var(--brand-600)" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="surface-elevated p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold">المصروفات حسب النوع</h3>
+              <p className="text-xs text-muted-foreground">إجمالي {formatEGP(stats.otherExpenses)}</p>
+            </div>
+            <AddExpenseDialog variant="secondary" label="مصروف" />
+          </div>
+          <div className="space-y-3">
+            {expenseByCategory.length === 0 && (
+              <p className="text-xs text-muted-foreground">لا توجد مصروفات مسجلة في هذه الفترة.</p>
+            )}
+            {expenseByCategory.map(c => (
+              <div key={c.code}>
+                <div className="mb-1 flex items-center justify-between text-xs">
+                  <span className="text-foreground">{c.label}</span>
+                  <span className="num text-muted-foreground">{formatEGP(c.amount)} · {c.pct}%</span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
+                  <div className="h-full rounded-full bg-primary/80 transition-[width] duration-500" style={{ width: `${c.pct}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
+
 
       {/* Invoices */}
       <div className="surface-elevated overflow-hidden">

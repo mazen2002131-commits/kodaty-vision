@@ -206,6 +206,7 @@ function Finance() {
           >
             <Download className="h-4 w-4" /> تصدير CSV
           </button>
+          <AddStockPurchaseDialog variant="secondary" />
           <AddExpenseDialog variant="secondary" />
           <NewInvoiceDialog />
         </div>

@@ -234,7 +234,9 @@ function OrdersList() {
                   <th className="px-3 py-2.5 text-start font-medium">العميل</th>
                   <th className="px-3 py-2.5 text-start font-medium">المنتج</th>
                   <th className="px-3 py-2.5 text-start font-medium">الحالة</th>
-                  <th className="px-3 py-2.5 text-start font-medium">المبلغ</th>
+                  <th className="px-3 py-2.5 text-start font-medium">التكلفة</th>
+                  <th className="px-3 py-2.5 text-start font-medium">سعر البيع</th>
+                  <th className="px-3 py-2.5 text-start font-medium">الإجمالي</th>
                   <th className="px-3 py-2.5 text-start font-medium">الأولوية</th>
                   <th className="px-4 py-2.5 text-start font-medium">التاريخ</th>
                   <th className="px-3 py-2.5 text-end font-medium"></th>

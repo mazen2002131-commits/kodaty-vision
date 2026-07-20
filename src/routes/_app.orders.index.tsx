@@ -3,10 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Search, Filter, Download, Plus, Loader2, Trash2, Pencil } from "lucide-react";
 
 import {
-  useOrders, useCustomers, useProducts, useCreateOrder, useCreateCustomer, useDeleteOrder,
+  useOrders, useCustomers, useProducts, useCreateOrder, useCreateCustomer, useDeleteOrder, useUpdateOrderItem,
   avatarColor, formatEGP,
   type OrderStatus, type OrderPriority,
 } from "@/lib/db";
+import { Save, Check } from "lucide-react";
 
 import { StatusPill, Avatar, PriorityBadge } from "@/components/app/pills";
 import { cn } from "@/lib/utils";
@@ -233,7 +234,9 @@ function OrdersList() {
                   <th className="px-3 py-2.5 text-start font-medium">العميل</th>
                   <th className="px-3 py-2.5 text-start font-medium">المنتج</th>
                   <th className="px-3 py-2.5 text-start font-medium">الحالة</th>
-                  <th className="px-3 py-2.5 text-start font-medium">المبلغ</th>
+                  <th className="px-3 py-2.5 text-start font-medium">التكلفة</th>
+                  <th className="px-3 py-2.5 text-start font-medium">سعر البيع</th>
+                  <th className="px-3 py-2.5 text-start font-medium">الإجمالي</th>
                   <th className="px-3 py-2.5 text-start font-medium">الأولوية</th>
                   <th className="px-4 py-2.5 text-start font-medium">التاريخ</th>
                   <th className="px-3 py-2.5 text-end font-medium"></th>
@@ -635,7 +638,37 @@ function OrderRow({ o, relative }: { o: ReturnType<typeof useOrders>["data"] ext
   const item = o.order_items?.[0];
   const cName = o.customers?.name ?? "—";
   const del = useDeleteOrder();
+  const upd = useUpdateOrderItem();
   const [confirming, setConfirming] = useState(false);
+
+  const [price, setPrice] = useState<string>(item ? String(item.unit_price ?? "") : "");
+  const [cost, setCost] = useState<string>(item ? String((item as any).unit_cost ?? "") : "");
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  useEffect(() => {
+    if (!item) return;
+    setPrice(String(item.unit_price ?? ""));
+    setCost(String((item as any).unit_cost ?? ""));
+  }, [item?.id, item?.unit_price, (item as any)?.unit_cost]);
+
+  const dirty = !!item && (
+    Number(price) !== Number(item.unit_price) ||
+    Number(cost) !== Number((item as any).unit_cost ?? 0)
+  );
+
+  async function saveEdits(e: React.MouseEvent) {
+    e.preventDefault(); e.stopPropagation();
+    if (!item || !dirty) return;
+    try {
+      await upd.mutateAsync({
+        id: item.id, order_id: o.id,
+        unit_price: Number(price || 0),
+        unit_cost: Number(cost || 0),
+      });
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 1400);
+    } catch (err) { toast.error("تعذّر الحفظ", { description: (err as Error).message }); }
+  }
 
   async function handleDelete(e: React.MouseEvent) {
     e.preventDefault(); e.stopPropagation();
@@ -643,6 +676,12 @@ function OrderRow({ o, relative }: { o: ReturnType<typeof useOrders>["data"] ext
     try { await del.mutateAsync(o.id); toast.success("تم حذف الطلب"); }
     catch (err) { toast.error("تعذّر الحذف", { description: (err as Error).message }); }
   }
+
+  const qty = item?.qty ?? 1;
+  const liveTotal = Number(price || 0) * qty;
+
+  const cellInput =
+    "w-24 rounded-md border border-transparent bg-transparent px-1.5 py-1 text-sm num outline-none hover:border-border focus:border-primary focus:bg-surface-sunken focus:ring-2 focus:ring-primary/20";
 
   return (
     <tr className="group border-b border-border/60 last:border-0 hover:bg-accent/30">
@@ -657,11 +696,51 @@ function OrderRow({ o, relative }: { o: ReturnType<typeof useOrders>["data"] ext
       </td>
       <td className="px-3 py-3">{item?.product_name ?? "—"}</td>
       <td className="px-3 py-3"><StatusPill status={o.status as OrderStatus} /></td>
-      <td className="px-3 py-3 num font-medium">{formatEGP(Number(o.total))}</td>
+      <td className="px-3 py-3">
+        {item ? (
+          <input
+            type="number" min={0} value={cost}
+            onChange={e => setCost(e.target.value)}
+            onClick={e => e.stopPropagation()}
+            className={cellInput}
+          />
+        ) : <span className="text-muted-foreground">—</span>}
+      </td>
+      <td className="px-3 py-3">
+        {item ? (
+          <input
+            type="number" min={0} value={price}
+            onChange={e => setPrice(e.target.value)}
+            onClick={e => e.stopPropagation()}
+            className={cellInput}
+          />
+        ) : <span className="text-muted-foreground">—</span>}
+      </td>
+      <td className="px-3 py-3 num font-medium">{formatEGP(dirty ? liveTotal : Number(o.total))}</td>
       <td className="px-3 py-3"><PriorityBadge priority={o.priority as OrderPriority} /></td>
       <td className="px-4 py-3 text-muted-foreground">{relative(o.created_at)}</td>
       <td className="px-3 py-3 text-end">
         <div className="inline-flex items-center gap-1">
+          {(dirty || savedFlash) && (
+            <button
+              onClick={saveEdits}
+              disabled={upd.isPending || !dirty}
+              title="حفظ"
+              className={cn(
+                "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs transition",
+                savedFlash
+                  ? "bg-success/15 text-success"
+                  : "bg-primary text-primary-foreground hover:opacity-90",
+              )}
+            >
+              {upd.isPending
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : savedFlash
+                  ? <Check className="h-3.5 w-3.5" />
+                  : <Save className="h-3.5 w-3.5" />}
+              {savedFlash ? "تم" : "حفظ"}
+            </button>
+          )}
           <Link
             to="/orders/$id"
             params={{ id: o.id }}

@@ -3,10 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Search, Filter, Download, Plus, Loader2, Trash2, Pencil } from "lucide-react";
 
 import {
-  useOrders, useCustomers, useProducts, useCreateOrder, useCreateCustomer, useDeleteOrder,
+  useOrders, useCustomers, useProducts, useCreateOrder, useCreateCustomer, useDeleteOrder, useUpdateOrderItem,
   avatarColor, formatEGP,
   type OrderStatus, type OrderPriority,
 } from "@/lib/db";
+import { Save, Check } from "lucide-react";
 
 import { StatusPill, Avatar, PriorityBadge } from "@/components/app/pills";
 import { cn } from "@/lib/utils";

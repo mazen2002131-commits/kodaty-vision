@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { Loader2 } from "lucide-react";
 import kodatyLogo from "@/assets/kodaty-logo.png.asset.json";
 
@@ -55,19 +54,6 @@ function AuthPage() {
     }
   };
 
-
-  const google = async () => {
-    setError(null); setBusy(true);
-    try {
-      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-      if (result.error) throw result.error;
-      if (!result.redirected) navigate({ to: "/" });
-    } catch (err: any) {
-      setError(err?.message ?? "تعذّر تسجيل الدخول بجوجل");
-      setBusy(false);
-    }
-  };
-
   return (
     <div dir="rtl" className="grid min-h-dvh grid-cols-1 lg:grid-cols-2 bg-surface-sunken">
       {/* Brand side */}
@@ -106,25 +92,9 @@ function AuthPage() {
               : "سجّل الدخول للوصول إلى مساحتك."}
           </p>
 
-          {mode === "signin" && (
-            <>
-              <button
-                type="button"
-                onClick={google}
-                disabled={busy}
-                className="mt-6 flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium shadow-sm transition hover:bg-muted/50 disabled:opacity-60"
-              >
-                <GoogleIcon />
-                متابعة عبر Google
-              </button>
+          {mode === "signin" && null}
 
-              <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-                <div className="h-px flex-1 bg-border" /> أو <div className="h-px flex-1 bg-border" />
-              </div>
-            </>
-          )}
-
-          <form onSubmit={submit} className={mode === "signin" ? "space-y-3" : "mt-6 space-y-3"}>
+          <form onSubmit={submit} className="mt-6 space-y-3">
             <Field label="البريد الإلكتروني">
               <input
                 type="email" required value={email} onChange={e => setEmail(e.target.value)}

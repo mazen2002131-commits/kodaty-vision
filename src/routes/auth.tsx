@@ -54,19 +54,6 @@ function AuthPage() {
     }
   };
 
-
-  const google = async () => {
-    setError(null); setBusy(true);
-    try {
-      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-      if (result.error) throw result.error;
-      if (!result.redirected) navigate({ to: "/" });
-    } catch (err: any) {
-      setError(err?.message ?? "تعذّر تسجيل الدخول بجوجل");
-      setBusy(false);
-    }
-  };
-
   return (
     <div dir="rtl" className="grid min-h-dvh grid-cols-1 lg:grid-cols-2 bg-surface-sunken">
       {/* Brand side */}

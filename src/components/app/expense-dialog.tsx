@@ -68,6 +68,7 @@ export function AddExpenseDialog({ variant = "primary", label = "إضافة مص
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["journal_entries"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
       toast.success("تم تسجيل المصروف — سيظهر فوراً في المالية");
       setOpen(false);
       setForm({
@@ -215,6 +216,7 @@ export function AddStockPurchaseDialog({ variant = "primary", label = "شراء 
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["journal_entries"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
       toast.success("تم تسجيل شراء البضاعة", {
         description: "قلّل الكاش وأثّر مباشرة على صافي الربح كمصروف مشتريات.",
       });

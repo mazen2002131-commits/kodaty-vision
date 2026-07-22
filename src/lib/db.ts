@@ -40,7 +40,7 @@ export type Order = {
   tags: string[];
   created_at: string;
   customers?: Pick<Customer, "id" | "name" | "email"> | null;
-  order_items?: { id: string; product_name: string; qty: number; unit_price: number; unit_cost?: number }[];
+  order_items?: { id: string; product_id?: string | null; product_name: string; qty: number; unit_price: number; unit_cost?: number }[];
 };
 
 function isMissingColumn(error: unknown, column: string) {
@@ -55,6 +55,9 @@ async function fetchOrderItemsForOrders(orderIds: string[], withProductId = fals
     ? "id,order_id,product_id,product_name,qty,unit_price"
     : "id,order_id,product_name,qty,unit_price";
   const withCostColumns = `${baseColumns},unit_cost`;
+  const minimalColumns = withProductId
+    ? "id,order_id,product_id,product_name,qty"
+    : "id,order_id,product_name,qty";
 
   let result: any = await (supabase as any)
     .from("order_items")
@@ -68,8 +71,20 @@ async function fetchOrderItemsForOrders(orderIds: string[], withProductId = fals
       .in("order_id", orderIds);
   }
 
+  if (result.error && isMissingColumn(result.error, "unit_price")) {
+    result = await (supabase as any)
+      .from("order_items")
+      .select(minimalColumns)
+      .in("order_id", orderIds);
+  }
+
   if (result.error) throw result.error;
-  return (result.data ?? []).map((item: any) => ({ ...item, unit_cost: Number(item.unit_cost ?? 0) }));
+  return (result.data ?? []).map((item: any) => ({
+    ...item,
+    qty: Number(item.qty ?? 1),
+    unit_price: Number(item.unit_price ?? 0),
+    unit_cost: Number(item.unit_cost ?? 0),
+  }));
 }
 
 async function safeFetchOrderItemsForOrders(orderIds: string[], withProductId = false) {
@@ -258,7 +273,7 @@ export function useCreateOrder() {
         .select()
         .single();
       if (error) throw error;
-      const { error: itemErr } = await supabase.from("order_items").insert({
+      let itemRes: any = await (supabase as any).from("order_items").insert({
         order_id: order.id,
         product_id: input.product_id,
         product_name: input.product_name,
@@ -266,6 +281,24 @@ export function useCreateOrder() {
         unit_price: input.unit_price,
         unit_cost: input.unit_cost ?? 0,
       });
+      if (itemRes.error && isMissingColumn(itemRes.error, "unit_cost")) {
+        itemRes = await (supabase as any).from("order_items").insert({
+          order_id: order.id,
+          product_id: input.product_id,
+          product_name: input.product_name,
+          qty: input.qty,
+          unit_price: input.unit_price,
+        });
+      }
+      if (itemRes.error && isMissingColumn(itemRes.error, "unit_price")) {
+        itemRes = await (supabase as any).from("order_items").insert({
+          order_id: order.id,
+          product_id: input.product_id,
+          product_name: input.product_name,
+          qty: input.qty,
+        });
+      }
+      const itemErr = itemRes.error;
       if (itemErr) throw itemErr;
 
       // Auto-create subscription for recurring products
@@ -299,6 +332,7 @@ export function useCreateOrder() {
 
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
       qc.invalidateQueries({ queryKey: ["subscriptions"] });
     },
 
@@ -312,16 +346,17 @@ export function useUpdateOrderStatus() {
       const { error } = await supabase.from("orders").update({ status }).eq("id", id);
       if (error) throw error;
       if (status === "delivered") {
-        const { data: o } = await supabase
+        const { data: order } = await supabase
           .from("orders")
-          .select("id, customer_id, order_items(product_id, product_name)")
+          .select("id, customer_id")
           .eq("id", id)
           .maybeSingle();
-        const item = (o as any)?.order_items?.[0];
+        const items = await safeFetchOrderItemsForOrders([id], true);
+        const item = items[0];
         const { runAutomationsFor } = await import("./automation");
         await runAutomationsFor("order_paid", {
           order_id: id,
-          customer_id: (o as any)?.customer_id,
+          customer_id: (order as any)?.customer_id,
           product_id: item?.product_id,
           product_name: item?.product_name,
         });
@@ -329,6 +364,7 @@ export function useUpdateOrderStatus() {
     },
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
       qc.invalidateQueries({ queryKey: ["order", v.id] });
       qc.invalidateQueries({ queryKey: ["licenses"] });
       qc.invalidateQueries({ queryKey: ["automations"] });
@@ -346,6 +382,7 @@ export function useUpdateOrder() {
     },
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
       qc.invalidateQueries({ queryKey: ["order", v.id] });
     },
   });
@@ -371,6 +408,7 @@ export function useUpdateOrderItem() {
     },
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
       qc.invalidateQueries({ queryKey: ["order", v.order_id] });
     },
   });
@@ -386,6 +424,7 @@ export function useDeleteOrder() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
     },
   });
 }
@@ -707,7 +746,10 @@ export function useCreateProduct() {
     },
 
 
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
+    },
   });
 }
 

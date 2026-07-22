@@ -8,7 +8,7 @@ import { toast } from "sonner";
  * Optionally show a toast for INSERT events.
  */
 export function useRealtimeInvalidate(
-  table: "orders" | "tickets" | "subscriptions",
+  table: "orders" | "order_items" | "products" | "tickets" | "subscriptions" | "journal_entries",
   queryKeys: (string | number)[][],
   options?: { toastOnInsert?: (row: any) => string | null },
 ) {

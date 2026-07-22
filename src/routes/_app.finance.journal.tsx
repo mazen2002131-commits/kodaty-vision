@@ -13,7 +13,16 @@ import { AddExpenseDialog, AddStockPurchaseDialog } from "@/components/app/expen
 
 export const Route = createFileRoute("/_app/finance/journal")({
   component: () => (<RequireAdmin><JournalPage /></RequireAdmin>),
-  head: () => ({ meta: [{ title: "القيود المحاسبية — Kodaty" }] }),
+  head: () => ({
+    meta: [
+      { title: "القيود المحاسبية — Kodaty" },
+      { name: "description", content: "إدارة القيود المحاسبية والمصروفات وشراء البضاعة التي تؤثر على تقارير المالية في Kodaty." },
+      { property: "og:title", content: "القيود المحاسبية — Kodaty" },
+      { property: "og:description", content: "سجل قيود ومصروفات Kodaty مع تأثير مباشر على صافي الربح." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 // دليل حسابات مبسّط
@@ -70,6 +79,7 @@ function JournalPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["journal_entries"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
       toast.success("تم حذف القيد");
     },
     onError: (e: Error) => toast.error("تعذّر الحذف", { description: e.message }),
@@ -238,6 +248,7 @@ function NewJournalDialog() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["journal_entries"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
       toast.success("تم تسجيل القيد بنجاح");
       setOpen(false);
       setForm({

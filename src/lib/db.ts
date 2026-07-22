@@ -122,11 +122,22 @@ export function useCreateCustomer() {
       tier?: string;
     }) => {
       const { data: u } = await supabase.auth.getUser();
-      const { data, error } = await supabase
+      const payload: any = { ...input, tier: input.tier ?? "regular", created_by: u.user?.id };
+      let { data, error } = await supabase
         .from("customers")
-        .insert({ ...input, tier: input.tier ?? "regular", created_by: u.user?.id })
+        .insert(payload)
         .select()
         .single();
+      // Fallback: some databases lack a default on customers.id — generate one client-side
+      if (error && /null value in column "id"/i.test(error.message)) {
+        const retry = await supabase
+          .from("customers")
+          .insert({ ...payload, id: crypto.randomUUID() })
+          .select()
+          .single();
+        data = retry.data as any;
+        error = retry.error as any;
+      }
       if (error) throw error;
       return data as Customer;
     },

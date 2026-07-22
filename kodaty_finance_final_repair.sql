@@ -107,5 +107,12 @@ BEGIN
     END LOOP;
   END IF;
 END $$;
--- Ensure customers.id has a UUID default (fixes: null value in column "id")
-ALTER TABLE public.customers ALTER COLUMN id SET DEFAULT gen_random_uuid();
+-- Ensure UUID defaults exist after moving/importing the database
+-- (fixes: null value in column "id" when adding customers/orders/items/subscriptions/products)
+ALTER TABLE IF EXISTS public.customers ALTER COLUMN id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS public.orders ALTER COLUMN id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS public.order_items ALTER COLUMN id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS public.subscriptions ALTER COLUMN id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS public.products ALTER COLUMN id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS public.licenses ALTER COLUMN id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS public.tickets ALTER COLUMN id SET DEFAULT gen_random_uuid();

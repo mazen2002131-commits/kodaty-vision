@@ -346,16 +346,17 @@ export function useUpdateOrderStatus() {
       const { error } = await supabase.from("orders").update({ status }).eq("id", id);
       if (error) throw error;
       if (status === "delivered") {
-        const { data: o } = await supabase
+        const { data: order } = await supabase
           .from("orders")
-          .select("id, customer_id, order_items(product_id, product_name)")
+          .select("id, customer_id")
           .eq("id", id)
           .maybeSingle();
-        const item = (o as any)?.order_items?.[0];
+        const items = await safeFetchOrderItemsForOrders([id], true);
+        const item = items[0];
         const { runAutomationsFor } = await import("./automation");
         await runAutomationsFor("order_paid", {
           order_id: id,
-          customer_id: (o as any)?.customer_id,
+          customer_id: (order as any)?.customer_id,
           product_id: item?.product_id,
           product_name: item?.product_name,
         });

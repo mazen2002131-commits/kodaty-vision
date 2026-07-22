@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Download, Plus, Receipt, BookOpen, Loader2 } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Download, Plus, Receipt, BookOpen, Loader2, AlertTriangle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  useOrders, useCustomers, useProducts, useCreateOrder,
+  useCustomers, useProducts, useCreateOrder,
   avatarColor, formatEGP, type OrderStatus, type OrderPriority,
 } from "@/lib/db";
 import { Avatar } from "@/components/app/pills";
@@ -32,8 +32,9 @@ const PAYMENT_LABELS: Record<string, string> = {
 };
 
 function Finance() {
-  const { data: allOrders = [], isLoading: ordersLoading } = useOrders();
-  const { data: allJournal = [] } = useJournal();
+  const { data: ledger = EMPTY_LEDGER, isLoading: ordersLoading } = useFinanceLedger();
+  const allOrders = ledger.orders;
+  const allJournal = ledger.journal;
 
   const [period, setPeriod] = useState<"1" | "7" | "30" | "90" | "365" | "all" | "custom">("30");
   const [customFrom, setCustomFrom] = useState<string>(() => new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10));
@@ -70,8 +71,7 @@ function Finance() {
     const revenue = orders.reduce((s, o) => s + Number(o.total), 0);
     const paidOrders = orders.filter(o => o.status === "delivered");
     const paid = paidOrders.reduce((s, o) => s + Number(o.total), 0);
-    const cogs = paidOrders.reduce((s, o) =>
-      s + (o.order_items ?? []).reduce((x, it) => x + Number(it.unit_cost ?? 0) * Number(it.qty), 0), 0);
+    const cogs = paidOrders.reduce((s, o) => s + Number(o.cost_total ?? 0), 0);
     const unpaid = orders.filter(o => o.status === "pending" || o.status === "processing")
       .reduce((s, o) => s + Number(o.total), 0);
     const otherExpenses = journal
@@ -95,10 +95,13 @@ function Finance() {
       const revenue = orders
         .filter(o => o.created_at.slice(0, 10) === key)
         .reduce((s, o) => s + Number(o.total), 0);
-      const expenses = journal
+      const cogs = orders
+        .filter(o => o.status === "delivered" && o.created_at.slice(0, 10) === key)
+        .reduce((s, o) => s + Number(o.cost_total ?? 0), 0);
+      const manualExpenses = journal
         .filter(e => e.entry_date === key && e.debit_account.startsWith("5"))
         .reduce((s, e) => s + Number(e.amount), 0);
-      days.push({ day: d.getDate().toString(), revenue, expenses });
+      days.push({ day: d.getDate().toString(), revenue, expenses: cogs + manualExpenses });
     }
     return days;
   }, [orders, journal, toMs, bucketDays]);
@@ -213,6 +216,15 @@ function Finance() {
       </div>
 
       {/* KPIs */}
+      {ledger.warnings.length > 0 && (
+        <div className="flex items-start gap-3 rounded-lg border border-warning/25 bg-warning/10 px-4 py-3 text-sm text-warning">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <div className="font-medium text-foreground">المالية تعمل من بيانات الطلبات المتاحة حالياً</div>
+            <div className="mt-1 text-xs text-muted-foreground">{ledger.warnings.join(" · ")}</div>
+          </div>
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <Kpi label="إجمالي الإيرادات" value={formatEGP(stats.revenue)} delta={{ v: `${orders.length} طلب`, up: true }} icon={Wallet} tone="brand" />
         <Kpi label="مقبوضات" value={formatEGP(stats.paid)} delta={{ v: "طلبات مُسلّمة", up: true }} icon={TrendingUp} tone="success" />
@@ -372,7 +384,7 @@ function Finance() {
               <tbody>
                 {recentInvoices.map(o => {
                   const cName = o.customers?.name ?? "—";
-                  const item = o.order_items?.[0];
+                    const item = o.order_items?.[0];
                   const paid = o.status === "delivered";
                   return (
                     <tr key={o.id} className="border-t border-border/60 hover:bg-accent/30">
@@ -413,6 +425,204 @@ function Finance() {
 }
 
 // ---------- Journal hook ----------
+type FinanceOrderItem = {
+  id: string;
+  order_id: string;
+  product_id: string | null;
+  product_name: string;
+  qty: number;
+  unit_price: number;
+  unit_cost: number;
+};
+
+type FinanceOrder = {
+  id: string;
+  code: string;
+  customer_id: string | null;
+  status: string;
+  total: number;
+  currency: string;
+  payment_method: string | null;
+  created_at: string;
+  customers?: { id: string; name: string; email: string | null } | null;
+  order_items?: FinanceOrderItem[];
+  cost_total: number;
+};
+
+type JournalEntry = {
+  id: string;
+  entry_date: string;
+  debit_account: string;
+  credit_account: string;
+  amount: number;
+  description: string;
+  reference: string | null;
+};
+
+type FinanceLedger = {
+  orders: FinanceOrder[];
+  journal: JournalEntry[];
+  warnings: string[];
+};
+
+const EMPTY_LEDGER: FinanceLedger = { orders: [], journal: [], warnings: [] };
+
+function isMissingColumn(error: unknown, column: string) {
+  const err = error as { code?: string; message?: string; details?: string } | null;
+  const text = `${err?.message ?? ""} ${err?.details ?? ""}`;
+  return err?.code === "42703" || text.includes(column);
+}
+
+function normalizeFinanceItem(row: Record<string, unknown>): FinanceOrderItem {
+  return {
+    id: String(row.id ?? `${row.order_id ?? "order"}-${row.product_name ?? "item"}`),
+    order_id: String(row.order_id ?? ""),
+    product_id: row.product_id ? String(row.product_id) : null,
+    product_name: String(row.product_name ?? "—"),
+    qty: Number(row.qty ?? 1),
+    unit_price: Number(row.unit_price ?? 0),
+    unit_cost: Number(row.unit_cost ?? 0),
+  };
+}
+
+function useFinanceLedger() {
+  return useQuery({
+    queryKey: ["finance-ledger"],
+    queryFn: async (): Promise<FinanceLedger> => {
+      const warnings: string[] = [];
+
+      const { data: ordersData, error: ordersError } = await supabase
+        .from("orders")
+        .select("id,code,customer_id,status,total,currency,payment_method,created_at")
+        .order("created_at", { ascending: false });
+
+      if (ordersError) {
+        console.warn("[finance] orders failed", ordersError);
+        return { orders: [], journal: [], warnings: ["تعذّر قراءة الطلبات؛ راجع صلاحيات جدول orders"] };
+      }
+
+      const orders = ((ordersData ?? []) as Record<string, unknown>[]).map((o) => ({
+        id: String(o.id),
+        code: String(o.code ?? "—"),
+        customer_id: o.customer_id ? String(o.customer_id) : null,
+        status: String(o.status ?? "pending"),
+        total: Number(o.total ?? 0),
+        currency: String(o.currency ?? "EGP"),
+        payment_method: o.payment_method ? String(o.payment_method) : null,
+        created_at: String(o.created_at ?? new Date().toISOString()),
+        customers: null,
+        order_items: [],
+        cost_total: 0,
+      })) as FinanceOrder[];
+
+      const orderIds = orders.map(o => o.id);
+      const customerIds = Array.from(new Set(orders.map(o => o.customer_id).filter(Boolean))) as string[];
+
+      const [customersResult, productsResult, journalResult] = await Promise.all([
+        customerIds.length
+          ? supabase.from("customers").select("id,name,email").in("id", customerIds)
+          : Promise.resolve({ data: [], error: null }),
+        supabase.from("products").select("id,cost_price,price,name"),
+        fetchFinanceJournal(),
+      ]);
+
+      if (customersResult.error) {
+        warnings.push("أسماء العملاء غير متاحة");
+        console.warn("[finance] customers failed", customersResult.error);
+      }
+      if (productsResult.error) {
+        warnings.push("أسعار تكلفة المنتجات غير متاحة");
+        console.warn("[finance] products failed", productsResult.error);
+      }
+      warnings.push(...journalResult.warnings);
+
+      const itemResult = await fetchFinanceItems(orderIds);
+      warnings.push(...itemResult.warnings);
+
+      const customers = new Map((customersResult.data ?? []).map((c: any) => [String(c.id), c]));
+      const products = new Map((productsResult.data ?? []).map((p: any) => [String(p.id), p]));
+      const itemsByOrder = new Map<string, FinanceOrderItem[]>();
+
+      itemResult.items.forEach((item) => {
+        const product = item.product_id ? products.get(String(item.product_id)) : null;
+        const unitCost = Number(item.unit_cost || product?.cost_price || 0);
+        const unitPrice = Number(item.unit_price || product?.price || 0);
+        const normalized = { ...item, unit_cost: unitCost, unit_price: unitPrice };
+        itemsByOrder.set(item.order_id, [...(itemsByOrder.get(item.order_id) ?? []), normalized]);
+      });
+
+      return {
+        orders: orders.map((order) => {
+          const items = itemsByOrder.get(order.id) ?? [];
+          return {
+            ...order,
+            customers: order.customer_id ? (customers.get(order.customer_id) ?? null) : null,
+            order_items: items,
+            cost_total: items.reduce((sum, item) => sum + Number(item.unit_cost ?? 0) * Number(item.qty ?? 1), 0),
+          };
+        }),
+        journal: journalResult.entries,
+        warnings,
+      };
+    },
+    retry: false,
+  });
+}
+
+async function fetchFinanceItems(orderIds: string[]): Promise<{ items: FinanceOrderItem[]; warnings: string[] }> {
+  if (orderIds.length === 0) return { items: [], warnings: [] };
+  const warnings: string[] = [];
+  const queries = [
+    "id,order_id,product_id,product_name,qty,unit_price,unit_cost",
+    "id,order_id,product_id,product_name,qty,unit_price",
+    "id,order_id,product_id,product_name,qty",
+  ];
+
+  for (const columns of queries) {
+    const { data, error } = await (supabase as any)
+      .from("order_items")
+      .select(columns)
+      .in("order_id", orderIds);
+
+    if (!error) {
+      if (!columns.includes("unit_cost")) warnings.push("تكلفة بعض البنود مأخوذة من سعر تكلفة المنتج");
+      if (!columns.includes("unit_price")) warnings.push("أسعار بيع البنود غير موجودة؛ الاعتماد على إجمالي الطلب");
+      return { items: (data ?? []).map(normalizeFinanceItem), warnings };
+    }
+
+    if (!isMissingColumn(error, "unit_cost") && !isMissingColumn(error, "unit_price")) {
+      console.warn("[finance] order_items failed", error);
+      return { items: [], warnings: ["بنود الطلبات غير متاحة؛ تكلفة البضاعة ستظهر صفر"] };
+    }
+  }
+
+  return { items: [], warnings: ["بنود الطلبات غير متاحة؛ تكلفة البضاعة ستظهر صفر"] };
+}
+
+async function fetchFinanceJournal(): Promise<{ entries: JournalEntry[]; warnings: string[] }> {
+  const { data, error } = await (supabase as any)
+    .from("journal_entries")
+    .select("id, entry_date, debit_account, credit_account, amount, description, reference");
+
+  if (error) {
+    console.warn("[finance] journal failed", error);
+    return { entries: [], warnings: ["جدول القيود/المصروفات غير متاح؛ الأرباح محسوبة من الطلبات والتكلفة فقط"] };
+  }
+
+  return {
+    entries: ((data ?? []) as Record<string, unknown>[]).map((entry) => ({
+      id: String(entry.id),
+      entry_date: String(entry.entry_date),
+      debit_account: String(entry.debit_account ?? ""),
+      credit_account: String(entry.credit_account ?? ""),
+      amount: Number(entry.amount ?? 0),
+      description: String(entry.description ?? ""),
+      reference: entry.reference ? String(entry.reference) : null,
+    })),
+    warnings: [],
+  };
+}
+
 function useJournal() {
   return useQuery({
     queryKey: ["journal_entries"],

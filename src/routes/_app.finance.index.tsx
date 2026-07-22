@@ -493,7 +493,7 @@ function useFinanceLedger() {
 
       const { data: ordersData, error: ordersError } = await supabase
         .from("orders")
-        .select("id,code,customer_id,status,total,currency,payment_method,created_at")
+        .select("*")
         .order("created_at", { ascending: false });
 
       if (ordersError) {
@@ -506,7 +506,7 @@ function useFinanceLedger() {
         code: String(o.code ?? "—"),
         customer_id: o.customer_id ? String(o.customer_id) : null,
         status: String(o.status ?? "pending"),
-        total: Number(o.total ?? 0),
+        total: Number(o.total ?? o.total_amount ?? o.amount ?? 0),
         currency: String(o.currency ?? "EGP"),
         payment_method: o.payment_method ? String(o.payment_method) : null,
         created_at: String(o.created_at ?? new Date().toISOString()),
@@ -569,45 +569,32 @@ function useFinanceLedger() {
 async function fetchFinanceItems(orderIds: string[]): Promise<{ items: FinanceOrderItem[]; warnings: string[] }> {
   if (orderIds.length === 0) return { items: [], warnings: [] };
   const warnings: string[] = [];
-  const queries = [
-    "id,order_id,product_id,product_name,qty,unit_price,unit_cost",
-    "id,order_id,product_id,product_name,qty,unit_price",
-    "id,order_id,product_id,product_name,qty",
-  ];
+  const { data, error } = await (supabase as any)
+    .from("order_items")
+    .select("*")
+    .in("order_id", orderIds);
 
-  for (const columns of queries) {
-    const { data, error } = await (supabase as any)
-      .from("order_items")
-      .select(columns)
-      .in("order_id", orderIds);
-
-    if (!error) {
-      if (!columns.includes("unit_cost")) warnings.push("تكلفة بعض البنود مأخوذة من سعر تكلفة المنتج");
-      if (!columns.includes("unit_price")) warnings.push("أسعار بيع البنود غير موجودة؛ الاعتماد على إجمالي الطلب");
-      return { items: (data ?? []).map(normalizeFinanceItem), warnings };
-    }
-
-    if (!isMissingColumn(error, "unit_cost") && !isMissingColumn(error, "unit_price")) {
-      console.warn("[finance] order_items failed", error);
-      return { items: [], warnings: ["بنود الطلبات غير متاحة؛ تكلفة البضاعة ستظهر صفر"] };
-    }
+  if (!error) {
+    const rows = (data ?? []) as Record<string, unknown>[];
+    if (rows.some(row => row.unit_cost === undefined)) warnings.push("تكلفة بعض البنود مأخوذة من سعر تكلفة المنتج");
+    if (rows.some(row => row.unit_price === undefined)) warnings.push("أسعار بيع البنود غير موجودة؛ الاعتماد على إجمالي الطلب");
+    return { items: rows.map(normalizeFinanceItem), warnings };
   }
 
+  console.warn("[finance] order_items failed", error);
   return { items: [], warnings: ["بنود الطلبات غير متاحة؛ تكلفة البضاعة ستظهر صفر"] };
 }
 
 async function fetchFinanceProducts(): Promise<{ products: Record<string, unknown>[]; warnings: string[] }> {
-  const { data, error } = await (supabase as any).from("products").select("id,cost_price,price,name");
-  if (!error) return { products: data ?? [], warnings: [] };
-
-  if (isMissingColumn(error, "cost_price")) {
-    const fallback = await (supabase as any).from("products").select("id,price,name");
-    if (!fallback.error) {
-      return {
-        products: (fallback.data ?? []).map((p: Record<string, unknown>) => ({ ...p, cost_price: 0 })),
-        warnings: ["سعر تكلفة المنتجات غير موجود؛ تكلفة البضاعة ستعتمد على تكلفة بنود الطلب فقط"],
-      };
-    }
+  const { data, error } = await (supabase as any).from("products").select("*");
+  if (!error) {
+    const rows = (data ?? []) as Record<string, unknown>[];
+    return {
+      products: rows,
+      warnings: rows.some(row => row.cost_price === undefined)
+        ? ["سعر تكلفة المنتجات غير موجود؛ تكلفة البضاعة ستعتمد على تكلفة بنود الطلب فقط"]
+        : [],
+    };
   }
 
   console.warn("[finance] products failed", error);

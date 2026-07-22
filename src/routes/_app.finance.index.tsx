@@ -522,7 +522,7 @@ function useFinanceLedger() {
         customerIds.length
           ? supabase.from("customers").select("id,name,email").in("id", customerIds)
           : Promise.resolve({ data: [], error: null }),
-        supabase.from("products").select("id,cost_price,price,name"),
+        fetchFinanceProducts(),
         fetchFinanceJournal(),
       ]);
 
@@ -530,17 +530,14 @@ function useFinanceLedger() {
         warnings.push("أسماء العملاء غير متاحة");
         console.warn("[finance] customers failed", customersResult.error);
       }
-      if (productsResult.error) {
-        warnings.push("أسعار تكلفة المنتجات غير متاحة");
-        console.warn("[finance] products failed", productsResult.error);
-      }
+      warnings.push(...productsResult.warnings);
       warnings.push(...journalResult.warnings);
 
       const itemResult = await fetchFinanceItems(orderIds);
       warnings.push(...itemResult.warnings);
 
       const customers = new Map((customersResult.data ?? []).map((c: any) => [String(c.id), c]));
-      const products = new Map((productsResult.data ?? []).map((p: any) => [String(p.id), p]));
+      const products = new Map((productsResult.products ?? []).map((p: any) => [String(p.id), p]));
       const itemsByOrder = new Map<string, FinanceOrderItem[]>();
 
       itemResult.items.forEach((item) => {
@@ -597,6 +594,24 @@ async function fetchFinanceItems(orderIds: string[]): Promise<{ items: FinanceOr
   }
 
   return { items: [], warnings: ["بنود الطلبات غير متاحة؛ تكلفة البضاعة ستظهر صفر"] };
+}
+
+async function fetchFinanceProducts(): Promise<{ products: Record<string, unknown>[]; warnings: string[] }> {
+  const { data, error } = await (supabase as any).from("products").select("id,cost_price,price,name");
+  if (!error) return { products: data ?? [], warnings: [] };
+
+  if (isMissingColumn(error, "cost_price")) {
+    const fallback = await (supabase as any).from("products").select("id,price,name");
+    if (!fallback.error) {
+      return {
+        products: (fallback.data ?? []).map((p: Record<string, unknown>) => ({ ...p, cost_price: 0 })),
+        warnings: ["سعر تكلفة المنتجات غير موجود؛ تكلفة البضاعة ستعتمد على تكلفة بنود الطلب فقط"],
+      };
+    }
+  }
+
+  console.warn("[finance] products failed", error);
+  return { products: [], warnings: ["أسعار تكلفة المنتجات غير متاحة"] };
 }
 
 async function fetchFinanceJournal(): Promise<{ entries: JournalEntry[]; warnings: string[] }> {

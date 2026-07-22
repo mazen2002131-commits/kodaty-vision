@@ -49,6 +49,13 @@ function isMissingColumn(error: unknown, column: string) {
   return err?.code === "42703" || text.includes(column);
 }
 
+function makeId() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) =>
+    (Number(c) ^ (globalThis.crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (Number(c) / 4)))).toString(16),
+  );
+}
+
 async function fetchOrderItemsForOrders(orderIds: string[], withProductId = false) {
   if (orderIds.length === 0) return [];
   const baseColumns = withProductId
@@ -122,22 +129,12 @@ export function useCreateCustomer() {
       tier?: string;
     }) => {
       const { data: u } = await supabase.auth.getUser();
-      const payload: any = { ...input, tier: input.tier ?? "regular", created_by: u.user?.id };
-      let { data, error } = await supabase
+      const payload: any = { id: makeId(), ...input, tier: input.tier ?? "regular", created_by: u.user?.id };
+      const { data, error } = await supabase
         .from("customers")
         .insert(payload)
         .select()
         .single();
-      // Fallback: some databases lack a default on customers.id — generate one client-side
-      if (error && /null value in column "id"/i.test(error.message)) {
-        const retry = await supabase
-          .from("customers")
-          .insert({ ...payload, id: crypto.randomUUID() })
-          .select()
-          .single();
-        data = retry.data as any;
-        error = retry.error as any;
-      }
       if (error) throw error;
       return data as Customer;
     },
@@ -269,6 +266,7 @@ export function useCreateOrder() {
       const { data: u } = await supabase.auth.getUser();
       const total = input.unit_price * input.qty;
       const insertPayload: any = {
+        id: makeId(),
         code: "",
         customer_id: input.customer_id,
         status: input.status ?? "pending",
@@ -285,6 +283,7 @@ export function useCreateOrder() {
         .single();
       if (error) throw error;
       let itemRes: any = await (supabase as any).from("order_items").insert({
+        id: makeId(),
         order_id: order.id,
         product_id: input.product_id,
         product_name: input.product_name,
@@ -294,6 +293,7 @@ export function useCreateOrder() {
       });
       if (itemRes.error && isMissingColumn(itemRes.error, "unit_cost")) {
         itemRes = await (supabase as any).from("order_items").insert({
+          id: makeId(),
           order_id: order.id,
           product_id: input.product_id,
           product_name: input.product_name,
@@ -303,6 +303,7 @@ export function useCreateOrder() {
       }
       if (itemRes.error && isMissingColumn(itemRes.error, "unit_price")) {
         itemRes = await (supabase as any).from("order_items").insert({
+          id: makeId(),
           order_id: order.id,
           product_id: input.product_id,
           product_name: input.product_name,
@@ -327,6 +328,7 @@ export function useCreateOrder() {
           else ends.setFullYear(ends.getFullYear() + 1);
         }
         const { error: subErr } = await supabase.from("subscriptions").insert({
+          id: makeId(),
           customer_id: input.customer_id,
           product_id: input.product_id,
           product_name: input.product_name,

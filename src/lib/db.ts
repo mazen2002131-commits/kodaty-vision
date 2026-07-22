@@ -56,13 +56,13 @@ async function fetchOrderItemsForOrders(orderIds: string[], withProductId = fals
     : "id,order_id,product_name,qty,unit_price";
   const withCostColumns = `${baseColumns},unit_cost`;
 
-  let result = await supabase
+  let result: any = await (supabase as any)
     .from("order_items")
     .select(withCostColumns)
     .in("order_id", orderIds);
 
   if (result.error && isMissingColumn(result.error, "unit_cost")) {
-    result = await supabase
+    result = await (supabase as any)
       .from("order_items")
       .select(baseColumns)
       .in("order_id", orderIds);

@@ -107,3 +107,5 @@ BEGIN
     END LOOP;
   END IF;
 END $$;
+-- Ensure customers.id has a UUID default (fixes: null value in column "id")
+ALTER TABLE public.customers ALTER COLUMN id SET DEFAULT gen_random_uuid();

@@ -70,6 +70,7 @@ function JournalPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["journal_entries"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
       toast.success("تم حذف القيد");
     },
     onError: (e: Error) => toast.error("تعذّر الحذف", { description: e.message }),
@@ -238,6 +239,7 @@ function NewJournalDialog() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["journal_entries"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
       toast.success("تم تسجيل القيد بنجاح");
       setOpen(false);
       setForm({

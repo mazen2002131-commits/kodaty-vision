@@ -151,9 +151,12 @@ function AppLayout() {
 }
 
 function RealtimeBridge() {
-  useRealtimeInvalidate("orders", [["orders"], ["dashboard"]], {
-    toastOnInsert: (row) => `طلب جديد ${row?.code ?? ""} · ${Number(row?.total_amount ?? 0).toLocaleString("ar-EG")} ج.م`,
+  useRealtimeInvalidate("orders", [["orders"], ["dashboard"], ["finance-ledger"]], {
+    toastOnInsert: (row) => `طلب جديد ${row?.code ?? ""} · ${Number(row?.total ?? 0).toLocaleString("ar-EG")} ج.م`,
   });
+  useRealtimeInvalidate("order_items", [["orders"], ["dashboard"], ["finance-ledger"]]);
+  useRealtimeInvalidate("products", [["products"], ["dashboard"], ["finance-ledger"]]);
+  useRealtimeInvalidate("journal_entries", [["journal_entries"], ["finance-ledger"]]);
   useRealtimeInvalidate("tickets", [["tickets"]], {
     toastOnInsert: (row) => `تذكرة دعم جديدة: ${row?.subject ?? ""}`,
   });

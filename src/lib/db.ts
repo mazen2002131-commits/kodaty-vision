@@ -40,7 +40,7 @@ export type Order = {
   tags: string[];
   created_at: string;
   customers?: Pick<Customer, "id" | "name" | "email"> | null;
-  order_items?: { id: string; product_name: string; qty: number; unit_price: number; unit_cost?: number }[];
+  order_items?: { id: string; product_id?: string | null; product_name: string; qty: number; unit_price: number; unit_cost?: number }[];
 };
 
 function isMissingColumn(error: unknown, column: string) {
@@ -55,6 +55,9 @@ async function fetchOrderItemsForOrders(orderIds: string[], withProductId = fals
     ? "id,order_id,product_id,product_name,qty,unit_price"
     : "id,order_id,product_name,qty,unit_price";
   const withCostColumns = `${baseColumns},unit_cost`;
+  const minimalColumns = withProductId
+    ? "id,order_id,product_id,product_name,qty"
+    : "id,order_id,product_name,qty";
 
   let result: any = await (supabase as any)
     .from("order_items")
@@ -68,8 +71,20 @@ async function fetchOrderItemsForOrders(orderIds: string[], withProductId = fals
       .in("order_id", orderIds);
   }
 
+  if (result.error && isMissingColumn(result.error, "unit_price")) {
+    result = await (supabase as any)
+      .from("order_items")
+      .select(minimalColumns)
+      .in("order_id", orderIds);
+  }
+
   if (result.error) throw result.error;
-  return (result.data ?? []).map((item: any) => ({ ...item, unit_cost: Number(item.unit_cost ?? 0) }));
+  return (result.data ?? []).map((item: any) => ({
+    ...item,
+    qty: Number(item.qty ?? 1),
+    unit_price: Number(item.unit_price ?? 0),
+    unit_cost: Number(item.unit_cost ?? 0),
+  }));
 }
 
 async function safeFetchOrderItemsForOrders(orderIds: string[], withProductId = false) {
@@ -258,7 +273,7 @@ export function useCreateOrder() {
         .select()
         .single();
       if (error) throw error;
-      const { error: itemErr } = await supabase.from("order_items").insert({
+      let itemRes: any = await (supabase as any).from("order_items").insert({
         order_id: order.id,
         product_id: input.product_id,
         product_name: input.product_name,
@@ -266,6 +281,24 @@ export function useCreateOrder() {
         unit_price: input.unit_price,
         unit_cost: input.unit_cost ?? 0,
       });
+      if (itemRes.error && isMissingColumn(itemRes.error, "unit_cost")) {
+        itemRes = await (supabase as any).from("order_items").insert({
+          order_id: order.id,
+          product_id: input.product_id,
+          product_name: input.product_name,
+          qty: input.qty,
+          unit_price: input.unit_price,
+        });
+      }
+      if (itemRes.error && isMissingColumn(itemRes.error, "unit_price")) {
+        itemRes = await (supabase as any).from("order_items").insert({
+          order_id: order.id,
+          product_id: input.product_id,
+          product_name: input.product_name,
+          qty: input.qty,
+        });
+      }
+      const itemErr = itemRes.error;
       if (itemErr) throw itemErr;
 
       // Auto-create subscription for recurring products

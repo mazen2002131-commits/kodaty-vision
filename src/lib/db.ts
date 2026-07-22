@@ -43,6 +43,35 @@ export type Order = {
   order_items?: { id: string; product_name: string; qty: number; unit_price: number; unit_cost?: number }[];
 };
 
+function isMissingColumn(error: unknown, column: string) {
+  const err = error as { code?: string; message?: string; details?: string } | null;
+  const text = `${err?.message ?? ""} ${err?.details ?? ""}`;
+  return err?.code === "42703" || text.includes(column);
+}
+
+async function fetchOrderItemsForOrders(orderIds: string[], withProductId = false) {
+  if (orderIds.length === 0) return [];
+  const baseColumns = withProductId
+    ? "id,order_id,product_id,product_name,qty,unit_price"
+    : "id,order_id,product_name,qty,unit_price";
+  const withCostColumns = `${baseColumns},unit_cost`;
+
+  let result = await supabase
+    .from("order_items")
+    .select(withCostColumns)
+    .in("order_id", orderIds);
+
+  if (result.error && isMissingColumn(result.error, "unit_cost")) {
+    result = await supabase
+      .from("order_items")
+      .select(baseColumns)
+      .in("order_id", orderIds);
+  }
+
+  if (result.error) throw result.error;
+  return (result.data ?? []).map((item: any) => ({ ...item, unit_cost: Number(item.unit_cost ?? 0) }));
+}
+
 // ---------- Customers ----------
 export function useCustomers() {
   return useQuery({
@@ -155,21 +184,18 @@ export function useOrders() {
       const customerIds = Array.from(new Set(rows.map(o => o.customer_id).filter(Boolean))) as string[];
       const orderIds = rows.map(o => o.id);
 
-      const [customersRes, itemsRes] = await Promise.all([
+      const [customersRes, items] = await Promise.all([
         customerIds.length
           ? supabase.from("customers").select("id,name,email").in("id", customerIds)
           : Promise.resolve({ data: [], error: null }),
-        orderIds.length
-          ? supabase.from("order_items").select("id,order_id,product_name,qty,unit_price,unit_cost").in("order_id", orderIds)
-          : Promise.resolve({ data: [], error: null }),
+        fetchOrderItemsForOrders(orderIds),
       ]);
 
       if (customersRes.error) throw customersRes.error;
-      if (itemsRes.error) throw itemsRes.error;
 
       const customers = new Map((customersRes.data ?? []).map((c: any) => [String(c.id), c]));
       const itemsByOrder = new Map<string, any[]>();
-      (itemsRes.data ?? []).forEach((item: any) => {
+      items.forEach((item: any) => {
         const key = String(item.order_id);
         itemsByOrder.set(key, [...(itemsByOrder.get(key) ?? []), item]);
       });
@@ -379,14 +405,10 @@ export function useCustomerOrders(customerId: string) {
       const rows = (orders ?? []) as Order[];
       if (rows.length === 0) return [];
 
-      const { data: items, error: itemsError } = await supabase
-        .from("order_items")
-        .select("id,order_id,product_name,qty,unit_price,unit_cost")
-        .in("order_id", rows.map(o => o.id));
-      if (itemsError) throw itemsError;
+      const items = await fetchOrderItemsForOrders(rows.map(o => o.id));
 
       const itemsByOrder = new Map<string, any[]>();
-      (items ?? []).forEach((item: any) => {
+      items.forEach((item: any) => {
         const key = String(item.order_id);
         itemsByOrder.set(key, [...(itemsByOrder.get(key) ?? []), item]);
       });
@@ -408,19 +430,18 @@ export function useOrder(id: string) {
       if (error) throw error;
       if (!order) return null;
 
-      const [customerRes, itemsRes] = await Promise.all([
+      const [customerRes, items] = await Promise.all([
         (order as any).customer_id
           ? supabase.from("customers").select("id,name,email,phone,company,tier").eq("id", (order as any).customer_id).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
-        supabase.from("order_items").select("id,product_id,product_name,qty,unit_price,unit_cost").eq("order_id", id),
+        fetchOrderItemsForOrders([id], true),
       ]);
       if (customerRes.error) throw customerRes.error;
-      if (itemsRes.error) throw itemsRes.error;
 
       return {
         ...(order as Order),
         customers: customerRes.data ?? null,
-        order_items: itemsRes.data ?? [],
+        order_items: items,
       } as (Order & { customers: (Customer & { phone: string | null }) | null }) | null;
     },
   });

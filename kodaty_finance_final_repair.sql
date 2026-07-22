@@ -72,8 +72,27 @@ GRANT ALL ON public.order_items TO service_role;
 GRANT ALL ON public.products TO service_role;
 GRANT ALL ON public.customers TO service_role;
 
--- 5) دعم Realtime حتى تتحدث لوحة المالية فوراً.
-ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.order_items;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.products;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.journal_entries;
+-- 5) دعم Realtime حتى تتحدث لوحة المالية فوراً، بدون فشل لو الجدول مضاف بالفعل.
+DO $$
+DECLARE
+  rel regclass;
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    FOREACH rel IN ARRAY ARRAY[
+      'public.orders'::regclass,
+      'public.order_items'::regclass,
+      'public.products'::regclass,
+      'public.journal_entries'::regclass
+    ] LOOP
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_publication_tables
+        WHERE pubname = 'supabase_realtime'
+          AND schemaname = 'public'
+          AND tablename = split_part(rel::text, '.', 2)
+      ) THEN
+        EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE %s', rel);
+      END IF;
+    END LOOP;
+  END IF;
+END $$;

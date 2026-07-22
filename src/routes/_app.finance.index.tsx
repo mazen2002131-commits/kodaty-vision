@@ -19,7 +19,16 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/finance/")({
   component: () => (<RequireAdmin><Finance /></RequireAdmin>),
-  head: () => ({ meta: [{ title: "المالية والمحاسبة — Kodaty" }] }),
+  head: () => ({
+    meta: [
+      { title: "المالية والمحاسبة — Kodaty" },
+      { name: "description", content: "لوحة مالية تعرض الإيرادات والمقبوضات وتكلفة البضاعة والمصروفات وصافي الربح من بيانات الطلبات والقيود." },
+      { property: "og:title", content: "المالية والمحاسبة — Kodaty" },
+      { property: "og:description", content: "تحليل أرباح ومصروفات Kodaty من الطلبات والتكاليف والقيود المحاسبية." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 const PAYMENT_LABELS: Record<string, string> = {

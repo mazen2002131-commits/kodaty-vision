@@ -72,6 +72,15 @@ async function fetchOrderItemsForOrders(orderIds: string[], withProductId = fals
   return (result.data ?? []).map((item: any) => ({ ...item, unit_cost: Number(item.unit_cost ?? 0) }));
 }
 
+async function safeFetchOrderItemsForOrders(orderIds: string[], withProductId = false) {
+  try {
+    return await fetchOrderItemsForOrders(orderIds, withProductId);
+  } catch (error) {
+    console.warn("[Kodaty] تعذّر تحميل بنود الطلبات، سيتم عرض الطلبات بدون البنود", error);
+    return [];
+  }
+}
+
 // ---------- Customers ----------
 export function useCustomers() {
   return useQuery({
@@ -188,10 +197,10 @@ export function useOrders() {
         customerIds.length
           ? supabase.from("customers").select("id,name,email").in("id", customerIds)
           : Promise.resolve({ data: [], error: null }),
-        fetchOrderItemsForOrders(orderIds),
+        safeFetchOrderItemsForOrders(orderIds),
       ]);
 
-      if (customersRes.error) throw customersRes.error;
+      if (customersRes.error) console.warn("[Kodaty] تعذّر تحميل عملاء الطلبات، سيتم عرض الطلبات بدون أسماء العملاء", customersRes.error);
 
       const customers = new Map((customersRes.data ?? []).map((c: any) => [String(c.id), c]));
       const itemsByOrder = new Map<string, any[]>();
@@ -405,7 +414,7 @@ export function useCustomerOrders(customerId: string) {
       const rows = (orders ?? []) as Order[];
       if (rows.length === 0) return [];
 
-      const items = await fetchOrderItemsForOrders(rows.map(o => o.id));
+      const items = await safeFetchOrderItemsForOrders(rows.map(o => o.id));
 
       const itemsByOrder = new Map<string, any[]>();
       items.forEach((item: any) => {
@@ -434,9 +443,9 @@ export function useOrder(id: string) {
         (order as any).customer_id
           ? supabase.from("customers").select("id,name,email,phone,company,tier").eq("id", (order as any).customer_id).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
-        fetchOrderItemsForOrders([id], true),
+        safeFetchOrderItemsForOrders([id], true),
       ]);
-      if (customerRes.error) throw customerRes.error;
+      if (customerRes.error) console.warn("[Kodaty] تعذّر تحميل بيانات عميل الطلب", customerRes.error);
 
       return {
         ...(order as Order),
@@ -490,7 +499,7 @@ export function useSubscriptions() {
       const { data: customers, error: customersError } = customerIds.length
         ? await supabase.from("customers").select("id,name,email").in("id", customerIds)
         : { data: [], error: null };
-      if (customersError) throw customersError;
+      if (customersError) console.warn("[Kodaty] تعذّر تحميل عملاء الاشتراكات، سيتم عرض الاشتراكات بدون أسماء العملاء", customersError);
 
       const customerMap = new Map((customers ?? []).map((c: any) => [String(c.id), c]));
       return rows.map(s => ({
@@ -653,7 +662,7 @@ export function useTickets() {
       const { data: customers, error: customersError } = customerIds.length
         ? await supabase.from("customers").select("id,name,email").in("id", customerIds)
         : { data: [], error: null };
-      if (customersError) throw customersError;
+      if (customersError) console.warn("[Kodaty] تعذّر تحميل عملاء التذاكر، سيتم عرض التذاكر بدون أسماء العملاء", customersError);
 
       const customerMap = new Map((customers ?? []).map((c: any) => [String(c.id), c]));
       return rows.map(t => ({

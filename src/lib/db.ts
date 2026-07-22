@@ -332,6 +332,7 @@ export function useCreateOrder() {
 
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
       qc.invalidateQueries({ queryKey: ["subscriptions"] });
     },
 
@@ -362,6 +363,7 @@ export function useUpdateOrderStatus() {
     },
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
       qc.invalidateQueries({ queryKey: ["order", v.id] });
       qc.invalidateQueries({ queryKey: ["licenses"] });
       qc.invalidateQueries({ queryKey: ["automations"] });
@@ -379,6 +381,7 @@ export function useUpdateOrder() {
     },
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
       qc.invalidateQueries({ queryKey: ["order", v.id] });
     },
   });
@@ -404,6 +407,7 @@ export function useUpdateOrderItem() {
     },
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
       qc.invalidateQueries({ queryKey: ["order", v.order_id] });
     },
   });
@@ -419,6 +423,7 @@ export function useDeleteOrder() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
     },
   });
 }
@@ -740,7 +745,10 @@ export function useCreateProduct() {
     },
 
 
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["finance-ledger"] });
+    },
   });
 }
 

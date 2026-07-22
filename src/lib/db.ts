@@ -144,12 +144,41 @@ export function useOrders() {
   return useQuery({
     queryKey: ["orders"],
     queryFn: async (): Promise<Order[]> => {
-      const { data, error } = await supabase
+      const { data: orders, error } = await supabase
         .from("orders")
-        .select("*, customers(id,name,email), order_items(id,product_name,qty,unit_price,unit_cost)")
+        .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Order[];
+      const rows = (orders ?? []) as Order[];
+      if (rows.length === 0) return [];
+
+      const customerIds = Array.from(new Set(rows.map(o => o.customer_id).filter(Boolean))) as string[];
+      const orderIds = rows.map(o => o.id);
+
+      const [customersRes, itemsRes] = await Promise.all([
+        customerIds.length
+          ? supabase.from("customers").select("id,name,email").in("id", customerIds)
+          : Promise.resolve({ data: [], error: null }),
+        orderIds.length
+          ? supabase.from("order_items").select("id,order_id,product_name,qty,unit_price,unit_cost").in("order_id", orderIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      if (customersRes.error) throw customersRes.error;
+      if (itemsRes.error) throw itemsRes.error;
+
+      const customers = new Map((customersRes.data ?? []).map((c: any) => [String(c.id), c]));
+      const itemsByOrder = new Map<string, any[]>();
+      (itemsRes.data ?? []).forEach((item: any) => {
+        const key = String(item.order_id);
+        itemsByOrder.set(key, [...(itemsByOrder.get(key) ?? []), item]);
+      });
+
+      return rows.map(o => ({
+        ...o,
+        customers: o.customer_id ? (customers.get(String(o.customer_id)) ?? null) : null,
+        order_items: itemsByOrder.get(String(o.id)) ?? [],
+      }));
     },
   });
 }
@@ -341,13 +370,28 @@ export function useCustomerOrders(customerId: string) {
   return useQuery({
     queryKey: ["customer-orders", customerId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: orders, error } = await supabase
         .from("orders")
-        .select("*, order_items(id,product_name,qty,unit_price,unit_cost)")
+        .select("*")
         .eq("customer_id", customerId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Order[];
+      const rows = (orders ?? []) as Order[];
+      if (rows.length === 0) return [];
+
+      const { data: items, error: itemsError } = await supabase
+        .from("order_items")
+        .select("id,order_id,product_name,qty,unit_price,unit_cost")
+        .in("order_id", rows.map(o => o.id));
+      if (itemsError) throw itemsError;
+
+      const itemsByOrder = new Map<string, any[]>();
+      (items ?? []).forEach((item: any) => {
+        const key = String(item.order_id);
+        itemsByOrder.set(key, [...(itemsByOrder.get(key) ?? []), item]);
+      });
+
+      return rows.map(o => ({ ...o, order_items: itemsByOrder.get(String(o.id)) ?? [] })) as Order[];
     },
   });
 }
@@ -356,13 +400,28 @@ export function useOrder(id: string) {
   return useQuery({
     queryKey: ["order", id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: order, error } = await supabase
         .from("orders")
-        .select("*, customers(id,name,email,phone,company,tier), order_items(id,product_id,product_name,qty,unit_price,unit_cost)")
+        .select("*")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
-      return data as (Order & { customers: (Customer & { phone: string | null }) | null }) | null;
+      if (!order) return null;
+
+      const [customerRes, itemsRes] = await Promise.all([
+        (order as any).customer_id
+          ? supabase.from("customers").select("id,name,email,phone,company,tier").eq("id", (order as any).customer_id).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+        supabase.from("order_items").select("id,product_id,product_name,qty,unit_price,unit_cost").eq("order_id", id),
+      ]);
+      if (customerRes.error) throw customerRes.error;
+      if (itemsRes.error) throw itemsRes.error;
+
+      return {
+        ...(order as Order),
+        customers: customerRes.data ?? null,
+        order_items: itemsRes.data ?? [],
+      } as (Order & { customers: (Customer & { phone: string | null }) | null }) | null;
     },
   });
 }
@@ -398,12 +457,25 @@ export function useSubscriptions() {
   return useQuery({
     queryKey: ["subscriptions"],
     queryFn: async (): Promise<Subscription[]> => {
-      const { data, error } = await supabase
+      const { data: subs, error } = await supabase
         .from("subscriptions")
-        .select("*, customers(id,name,email)")
+        .select("*")
         .order("ends_at", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as Subscription[];
+      const rows = (subs ?? []) as Subscription[];
+      if (rows.length === 0) return [];
+
+      const customerIds = Array.from(new Set(rows.map(s => s.customer_id).filter(Boolean))) as string[];
+      const { data: customers, error: customersError } = customerIds.length
+        ? await supabase.from("customers").select("id,name,email").in("id", customerIds)
+        : { data: [], error: null };
+      if (customersError) throw customersError;
+
+      const customerMap = new Map((customers ?? []).map((c: any) => [String(c.id), c]));
+      return rows.map(s => ({
+        ...s,
+        customers: s.customer_id ? (customerMap.get(String(s.customer_id)) ?? null) : null,
+      }));
     },
   });
 }
@@ -548,12 +620,25 @@ export function useTickets() {
   return useQuery({
     queryKey: ["tickets"],
     queryFn: async (): Promise<Ticket[]> => {
-      const { data, error } = await supabase
+      const { data: tickets, error } = await supabase
         .from("tickets")
-        .select("*, customers(id,name,email)")
+        .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Ticket[];
+      const rows = (tickets ?? []) as Ticket[];
+      if (rows.length === 0) return [];
+
+      const customerIds = Array.from(new Set(rows.map(t => t.customer_id).filter(Boolean))) as string[];
+      const { data: customers, error: customersError } = customerIds.length
+        ? await supabase.from("customers").select("id,name,email").in("id", customerIds)
+        : { data: [], error: null };
+      if (customersError) throw customersError;
+
+      const customerMap = new Map((customers ?? []).map((c: any) => [String(c.id), c]));
+      return rows.map(t => ({
+        ...t,
+        customers: t.customer_id ? (customerMap.get(String(t.customer_id)) ?? null) : null,
+      }));
     },
   });
 }

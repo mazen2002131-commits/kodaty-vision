@@ -89,8 +89,8 @@ function CustomersList() {
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-1 border-t border-border pt-3">
-                {c.tags.length === 0 && <span className="text-xs text-muted-foreground">لا توجد علامات</span>}
-                {c.tags.map(t => (
+                {(c.tags?.length ?? 0) === 0 && <span className="text-xs text-muted-foreground">لا توجد علامات</span>}
+                {(c.tags ?? []).map(t => (
                   <span key={t} className="rounded bg-surface-sunken px-1.5 py-0.5 text-[10px] text-muted-foreground">
                     {t}
                   </span>

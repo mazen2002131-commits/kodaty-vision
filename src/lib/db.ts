@@ -590,6 +590,7 @@ export function useCreateSubscription() {
         else ends.setFullYear(ends.getFullYear() + 1);
       }
       const { error } = await supabase.from("subscriptions").insert({
+        id: makeId(),
         customer_id: input.customer_id,
         product_id: input.product_id ?? null,
         product_name: input.product_name,
@@ -672,6 +673,7 @@ export function useCreateLicense() {
   return useMutation({
     mutationFn: async (input: { product_id: string; product_name: string; key: string; cost?: number }) => {
       const { error } = await supabase.from("licenses").insert({
+        id: makeId(),
         product_id: input.product_id,
         product_name: input.product_name,
         key: input.key,
@@ -730,6 +732,7 @@ export function useCreateTicket() {
   return useMutation({
     mutationFn: async (input: { customer_id: string; subject: string; priority?: "low"|"normal"|"high"|"urgent" }) => {
       const { error } = await supabase.from("tickets").insert({
+        id: makeId(),
         code: "",
         customer_id: input.customer_id,
         subject: input.subject,
@@ -747,6 +750,7 @@ export function useCreateProduct() {
   return useMutation({
     mutationFn: async (input: { name: string; category?: string; price: number; cost_price?: number; billing_type?: BillingType }) => {
       const { error } = await supabase.from("products").insert({
+        id: makeId(),
         name: input.name,
         category: input.category ?? null,
         price: input.price,
